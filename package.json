@@ -24,7 +24,7 @@
   "main": "dist/main/main.bundle.js",
   "license": "MIT",
   "dependencies": {
-    "@types/emojione": "^2.2.5",
+    "@types/emojione": "^2.2.6",
     "@types/lru-cache": "^5.1.0",
     "@types/styled-components": "^4.1.16",
     "array-move": "^2.1.0",
