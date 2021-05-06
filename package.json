@@ -76,7 +76,7 @@
     "tinycolor2": "^1.3.0",
     "tmp": "^0.1.0",
     "triangulr": "^1.0.3",
-    "underscore": "^1.9.1",
+    "underscore": "^1.13.1",
     "vivus": "^0.4.4",
     "webpack-command": "^0.4.2",
     "which": "^1.3.1",
