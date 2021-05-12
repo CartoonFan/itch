@@ -1,10 +1,9 @@
 import { LocalizedString } from "common/types";
 import React from "react";
-import { InjectedIntl } from "react-intl";
+import { IntlShape, injectIntl } from "react-intl";
 import styled from "renderer/styles";
 import { TString } from "renderer/t";
 import { map } from "underscore";
-import { withIntl } from "renderer/hocs/withIntl";
 
 const SelectRowDiv = styled.div`
   display: inline-block;
@@ -14,10 +13,10 @@ const Select = styled.select`
   border: none;
   padding: 6px 8px;
   margin-left: 2px;
-  background: ${props => props.theme.itemBackground};
+  background: ${(props) => props.theme.itemBackground};
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 2px;
-  color: ${props => props.theme.baseText};
+  color: ${(props) => props.theme.baseText};
   cursor: pointer;
   font-family: inherit;
   font-size: inherit;
@@ -81,7 +80,7 @@ interface Props {
   value?: string;
   onChange?(value: string): void;
 
-  intl: InjectedIntl;
+  intl: IntlShape;
 }
 
-export default withIntl(SelectRow);
+export default injectIntl(SelectRow);

@@ -2,7 +2,6 @@ import { actions } from "common/actions";
 import { hookLogging, messages } from "common/butlerd";
 import { t } from "common/format/t";
 import { modals } from "common/modals";
-import { ItchPromise } from "common/util/itch-promise";
 import { Watcher } from "common/util/watcher";
 import { dialog } from "electron";
 import { mcall } from "main/butlerd/mcall";
@@ -16,7 +15,7 @@ import { recordingLogger } from "common/logger";
 
 const logger = mainLogger.child(__filename);
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.removeInstallLocation, async (store, action) => {
     const { id } = action.payload;
 
@@ -64,7 +63,7 @@ export default function(watcher: Watcher) {
 
       const logger = recordingLogger(mainLogger);
       try {
-        await mcall(messages.InstallLocationsRemove, { id }, convo => {
+        await mcall(messages.InstallLocationsRemove, { id }, (convo) => {
           hookLogging(convo, logger);
         });
         store.dispatch(actions.installLocationsChanged({}));
@@ -101,7 +100,8 @@ export default function(watcher: Watcher) {
       // crazy typescript workaround, avert your eyes
       properties: ["openDirectory", "createDirectory"] as (
         | "openDirectory"
-        | "createDirectory")[],
+        | "createDirectory"
+      )[],
     };
 
     const openRes = await dialog.showOpenDialog(nativeWindow, dialogOpts);
@@ -110,7 +110,7 @@ export default function(watcher: Watcher) {
       const { installLocation } = await mcall(
         messages.InstallLocationsAdd,
         { path },
-        convo => {
+        (convo) => {
           hookLogging(convo, logger);
         }
       );

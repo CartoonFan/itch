@@ -1,4 +1,3 @@
-import { isEmpty } from "underscore";
 import { dirname } from "path";
 import progress from "progress-stream";
 
@@ -7,7 +6,7 @@ import { fileSize } from "common/format/filesize";
 import { Logger } from "common/logger";
 import { request } from "main/net/request";
 import { ProgressInfo } from "common/types";
-import { WriteStream } from "fs";
+import { WriteStream, createWriteStream } from "fs";
 import { delay } from "main/reactors/delay";
 import { isArray } from "util";
 
@@ -26,20 +25,21 @@ export async function downloadToFile(
 ) {
   const dir = dirname(file);
   try {
-    await sf.mkdirp(dir);
+    await sf.mkdir(dir);
   } catch (e) {
     logger.error(`Could not create ${dir}: ${e.message}`);
   }
 
-  const fileSink = sf.createWriteStream(file, {
+  const fileSink = createWriteStream(file, {
     flags: "w",
     mode: 0o777,
-    defaultEncoding: "binary",
+    encoding: "binary",
   }) as WriteStream;
   try {
     let totalSize = 0;
 
     let progressStream: NodeJS.ReadWriteStream;
+    let fileSinkPromise = sf.promised(fileSink);
     await request(
       "get",
       url,
@@ -47,7 +47,7 @@ export async function downloadToFile(
       {
         sink: () => {
           progressStream = progress({ length: totalSize, time: 500 });
-          progressStream.on("progress", info => {
+          progressStream.on("progress", (info) => {
             onProgress({
               progress: info.percentage / 100,
               eta: info.eta,
@@ -64,7 +64,7 @@ export async function downloadToFile(
           progressStream.pipe(fileSink);
           return progressStream;
         },
-        cb: res => {
+        cb: (res) => {
           logger.info(`HTTP ${res.statusCode} ${url}`);
           if (!/^2/.test("" + res.statusCode)) {
             const e = new Error(`HTTP ${res.statusCode} ${url}`) as HTTPError;
@@ -83,7 +83,8 @@ export async function downloadToFile(
         },
       }
     );
-    await sf.promised(fileSink);
+    logger.debug(`Awaiting file sink promise`);
+    await fileSinkPromise;
 
     const stats = await sf.lstat(file);
     logger.info(

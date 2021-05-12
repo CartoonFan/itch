@@ -16,7 +16,7 @@ import { PlanInstallParams, PlanInstallResponse } from "common/modals/types";
 import { Dispatch } from "common/types";
 import { ambientWind } from "common/util/navigation";
 import React from "react";
-import { InjectedIntl } from "react-intl";
+import { IntlShape, injectIntl } from "react-intl";
 import Button from "renderer/basics/Button";
 import Filler from "renderer/basics/Filler";
 import Floater from "renderer/basics/Floater";
@@ -28,7 +28,6 @@ import { doAsync } from "renderer/helpers/doAsync";
 import { LoadingStateDiv } from "renderer/hocs/butlerCaller";
 import { hook } from "renderer/hocs/hook";
 import watching, { Watcher } from "renderer/hocs/watching";
-import { withIntl } from "renderer/hocs/withIntl";
 import { rendererLogger } from "renderer/logger";
 import InstallLocationOptionComponent, {
   InstallLocationOption,
@@ -67,8 +66,8 @@ const ErrorParagraph = styled.div`
   flex-grow: 1;
   line-height: 1.4;
   margin-right: 1em;
-  color: ${props => props.theme.error};
-  font-size: ${props => props.theme.fontSizes.baseText};
+  color: ${(props) => props.theme.error};
+  font-size: ${(props) => props.theme.fontSizes.baseText};
 `;
 
 const WideBox = styled(Box)`
@@ -81,11 +80,11 @@ const SizeTable = styled.table`
     padding-right: 0.4em;
 
     &.low {
-      color: ${props => props.theme.error};
+      color: ${(props) => props.theme.error};
     }
 
     &.desc {
-      color: ${props => props.theme.secondaryText};
+      color: ${(props) => props.theme.secondaryText};
     }
 
     strong {
@@ -125,12 +124,12 @@ const SelectHeader = styled.h3`
 const StyledSelect = styled.select`
   flex-grow: 1;
   padding: 0.4em;
-  border: 1px solid ${props => props.theme.filterBorder};
+  border: 1px solid ${(props) => props.theme.filterBorder};
   border-radius: 3px;
-  color: ${props => props.theme.baseText};
+  color: ${(props) => props.theme.baseText};
 
   background: rgba(0, 0, 0, 0.1);
-  font-size: ${props => props.theme.fontSizes.large};
+  font-size: ${(props) => props.theme.fontSizes.large};
 `;
 
 enum PlanStage {
@@ -181,7 +180,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
     } = this.state;
 
     let canInstall = !error && !busy;
-    let locationOptions = installLocations.map(il => {
+    let locationOptions = installLocations.map((il) => {
       let val: InstallLocationOption = {
         label: `${il.path} (${fileSize(il.sizeInfo.freeSize)} free)`,
         value: il.id,
@@ -200,7 +199,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
 
     let uploadOptions = [];
     if (uploads) {
-      uploadOptions = uploads.map(u => {
+      uploadOptions = uploads.map((u) => {
         let val: UploadOption = {
           label: `${formatUploadTitle(u)} ${
             u.size > 0 ? fileSize(u.size) : ""
@@ -249,8 +248,8 @@ class PlanInstall extends React.PureComponent<Props, State> {
         {busy
           ? this.renderBusy()
           : error
-            ? this.renderError()
-            : this.renderSizes()}
+          ? this.renderError()
+          : this.renderSizes()}
         <Filler />
         <ModalButtons>
           <Button onClick={this.onCancel}>{T(["prompt.action.cancel"])}</Button>
@@ -335,23 +334,29 @@ class PlanInstall extends React.PureComponent<Props, State> {
 
     return (
       <SizeTable>
-        <tr>
-          <td className="desc">{T(_("plan_install.disk_space_required"))}</td>
-          <td>
-            <strong>{requiredSpace > 0 ? fileSize(requiredSpace) : "?"}</strong>
-          </td>
-        </tr>
-        <tr>
-          <td className="desc">{T(_("plan_install.disk_space_available"))}</td>
-          <td className={classNames({ low: !haveEnoughSpace })}>
-            <strong>{fileSize(freeSpace)}</strong>
-            {haveEnoughSpace ? (
-              <DiskSpaceIcon icon="checkmark" />
-            ) : (
-              <DiskSpaceIcon icon="warning" />
-            )}
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td className="desc">{T(_("plan_install.disk_space_required"))}</td>
+            <td>
+              <strong>
+                {requiredSpace > 0 ? fileSize(requiredSpace) : "?"}
+              </strong>
+            </td>
+          </tr>
+          <tr>
+            <td className="desc">
+              {T(_("plan_install.disk_space_available"))}
+            </td>
+            <td className={classNames({ low: !haveEnoughSpace })}>
+              <strong>{fileSize(freeSpace)}</strong>
+              {haveEnoughSpace ? (
+                <DiskSpaceIcon icon="checkmark" />
+              ) : (
+                <DiskSpaceIcon icon="warning" />
+              )}
+            </td>
+          </tr>
+        </tbody>
       </SizeTable>
     );
   }
@@ -414,7 +419,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
             queueDownload: true,
             fastQueue: true,
           },
-          convo => {
+          (convo) => {
             hookLogging(convo, logger);
           }
         );
@@ -477,7 +482,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
         const res = await rcall(
           messages.InstallPlan,
           { gameId, uploadId },
-          convo => {
+          (convo) => {
             hookLogging(convo, logger);
           }
         );
@@ -509,7 +514,7 @@ interface Props
   defaultInstallLocation: string;
   dispatch: Dispatch;
 
-  intl: InjectedIntl;
+  intl: IntlShape;
 }
 
 interface State {
@@ -527,8 +532,8 @@ interface State {
   pickedInstallLocationId?: string;
 }
 
-export default withIntl(
-  hook(map => ({
-    defaultInstallLocation: map(rs => rs.preferences.defaultInstallLocation),
+export default injectIntl(
+  hook((map) => ({
+    defaultInstallLocation: map((rs) => rs.preferences.defaultInstallLocation),
   }))(PlanInstall)
 );

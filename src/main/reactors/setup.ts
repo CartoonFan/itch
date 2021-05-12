@@ -4,14 +4,13 @@ import { messages } from "common/butlerd";
 import { makeButlerInstance } from "common/butlerd/make-butler-instance";
 import env from "common/env";
 import { Store } from "common/types";
-import { ItchPromise } from "common/util/itch-promise";
 import { appdataLocationPath } from "common/util/paths";
 import { Watcher } from "common/util/watcher";
 import { app } from "electron";
 import { Manager } from "main/broth/manager";
 import { mcall } from "main/butlerd/mcall";
 import { mainLogger } from "main/logger";
-import { mkdirp } from "main/os/sf";
+import { mkdir } from "main/os/sf";
 import { delay } from "main/reactors/delay";
 import { indexBy, isEmpty } from "underscore";
 import { recordingLogger } from "common/logger";
@@ -24,7 +23,7 @@ async function syncInstallLocations(store: Store) {
 
   const { preferences } = store.getState();
   if (!preferences.importedOldInstallLocations) {
-    await mkdirp(appdataLocationPath());
+    await mkdir(appdataLocationPath());
     let oldLocations = {
       ...preferences.installLocations,
       appdata: {
@@ -70,7 +69,7 @@ async function syncInstallLocations(store: Store) {
 export let manager: Manager;
 
 let initialButlerdResolve: (value?: any) => void;
-let initialButlerdPromise = new ItchPromise((resolve, reject) => {
+let initialButlerdPromise = new Promise((resolve, reject) => {
   initialButlerdResolve = resolve;
 });
 
@@ -121,7 +120,7 @@ async function initialSetup(store: Store, { retry }: { retry: boolean }) {
     logger.debug(`Waiting for butler promise...`);
     await Promise.race([
       initialButlerdPromise,
-      new ItchPromise((resolve, reject) => {
+      new Promise((resolve, reject) => {
         setTimeout(() => {
           reject(new Error("Timed out while connecting to butlerd"));
         }, 5000);
@@ -182,7 +181,7 @@ async function refreshButlerd(store: Store) {
 
   instance
     .promise()
-    .catch(e => {
+    .catch((e) => {
       logger.error(`butlerd instance ${id} threw:`);
       logger.error(e.stack);
       let endpointAtCrash = store.getState().butlerd.endpoint;
@@ -211,15 +210,13 @@ async function refreshButlerd(store: Store) {
   );
 
   incarnation.client = new Client(endpoint);
-  incarnation.client.onWarning(msg => {
+  incarnation.client.onWarning((msg) => {
     logger.warn(`(butlerd) ${msg}`);
   });
 
   const versionInfo = await incarnation.client.call(messages.VersionGet, {});
   logger.info(
-    `Now speaking with butlerd instance ${id}, version ${
-      versionInfo.versionString
-    }, endpoint ${endpoint.tcp.address}`
+    `Now speaking with butlerd instance ${id}, version ${versionInfo.versionString}, endpoint ${endpoint.tcp.address}`
   );
 
   store.dispatch(actions.gotButlerdEndpoint({ endpoint }));
@@ -231,7 +228,7 @@ async function refreshButlerd(store: Store) {
   previousIncarnation = incarnation;
 }
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.boot, async (store, action) => {
     await initialSetup(store, { retry: false });
   });

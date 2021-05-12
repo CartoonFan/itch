@@ -13,7 +13,7 @@ import {
 import { ambientWind, ambientWindState } from "common/util/navigation";
 import { stripUnit } from "polished";
 import React from "react";
-import { InjectedIntl } from "react-intl";
+import { IntlShape, injectIntl } from "react-intl";
 import Button from "renderer/basics/Button";
 import Cover from "renderer/basics/Cover";
 import Filler from "renderer/basics/Filler";
@@ -29,7 +29,6 @@ import TimeAgo from "renderer/basics/TimeAgo";
 import { hook } from "renderer/hocs/hook";
 import watching, { Watcher } from "renderer/hocs/watching";
 import Hoverable from "renderer/hocs/withHover";
-import { withIntl } from "renderer/hocs/withIntl";
 import { modalWidgets } from "renderer/modal-widgets";
 import styled, * as styles from "renderer/styles";
 import { T, TString } from "renderer/t";
@@ -144,7 +143,8 @@ const ModalsDiv = styled.div`
       h5,
       h6 {
         margin-bottom: 0.4em;
-        font-size: ${props => stripUnit(props.theme.fontSizes.baseText) + 2}px;
+        font-size: ${(props) =>
+          stripUnit(props.theme.fontSizes.baseText) + 2}px;
         font-weight: bold;
       }
 
@@ -166,7 +166,7 @@ const ModalsDiv = styled.div`
       }
 
       .secondary {
-        color: ${props => props.theme.secondaryText};
+        color: ${(props) => props.theme.secondaryText};
       }
 
       strong {
@@ -206,11 +206,11 @@ const ModalsDiv = styled.div`
         text-shadow: 0 0 2px rgba(0, 0, 0, 0.58);
 
         &:not(.action-play) {
-          -webkit-filter: grayscale(100%) brightness(70%);
+          filter: grayscale(100%) brightness(70%);
         }
 
         &:hover {
-          -webkit-filter: brightness(110%);
+          filter: brightness(110%);
         }
 
         &,
@@ -241,7 +241,7 @@ const ModalsDiv = styled.div`
 `;
 
 const HeaderDiv = styled.div`
-  background: ${props => props.theme.sidebarBackground};
+  background: ${(props) => props.theme.sidebarBackground};
   padding: 8px;
   padding-left: 20px;
   display: flex;
@@ -261,8 +261,8 @@ const HeaderDiv = styled.div`
   }
 
   .title {
-    color: ${props => props.theme.secondaryText};
-    font-size: ${props => props.theme.fontSizes.large};
+    color: ${(props) => props.theme.secondaryText};
+    font-size: ${(props) => props.theme.fontSizes.large};
   }
 `;
 
@@ -314,7 +314,7 @@ class Modals extends React.PureComponent<Props, State> {
         let primaryButtons = map(modal.buttons, specToButton);
         primaryButtons = filter(
           primaryButtons,
-          b => !b.className || !/secondary/.test(b.className)
+          (b) => !b.className || !/secondary/.test(b.className)
         );
         // if there's more than one primary button, or none at all, 'ok' does nothing
         if (primaryButtons.length === 1) {
@@ -485,7 +485,7 @@ class Modals extends React.PureComponent<Props, State> {
                 {tags || timeAgo ? (
                   <BigButtonRow>
                     {tags
-                      ? map(tags, tag => {
+                      ? map(tags, (tag) => {
                           return (
                             <Tag>
                               {tag.icon ? <Icon icon={tag.icon} /> : null}
@@ -579,7 +579,7 @@ class Modals extends React.PureComponent<Props, State> {
 
 interface Props {
   modal: Modal;
-  intl: InjectedIntl;
+  intl: IntlShape;
   dispatch: Dispatch;
 }
 
@@ -587,6 +587,6 @@ interface State {
   widgetPayload?: typeof actions.modalResponse.payload;
 }
 
-export default hook(map => ({
-  modal: map(rs => ambientWindState(rs).modals[0]),
-}))(withIntl(Modals));
+export default hook((map) => ({
+  modal: map((rs) => ambientWindState(rs).modals[0]),
+}))(injectIntl(Modals));

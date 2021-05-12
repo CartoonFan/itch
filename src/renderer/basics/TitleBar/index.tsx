@@ -63,7 +63,7 @@ const TitleBarDiv = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
-  background: ${props => props.theme.sidebarBackground};
+  background: ${(props) => props.theme.sidebarBackground};
   padding-left: 10px;
   height: ${titleBarHeight}px;
 `;
@@ -71,7 +71,7 @@ const TitleBarDiv = styled.div`
 const TitleDiv = styled.div`
   ${styles.singleLine};
 
-  font-size: ${props => props.theme.fontSizes.large};
+  font-size: ${(props) => props.theme.fontSizes.large};
 `;
 
 const emptyObj = {};
@@ -79,7 +79,7 @@ const emptyObj = {};
 class TitleBar extends React.PureComponent<Props> {
   render() {
     const { tab, macos, tabInstance } = this.props;
-    const iw = (window as ExtendedWindow).windSpec;
+    const iw = ((window as unknown) as ExtendedWindow).windSpec;
     const secondary = iw.role == "secondary";
 
     const sp = Space.fromInstance(tab, tabInstance);
@@ -121,7 +121,7 @@ class TitleBar extends React.PureComponent<Props> {
       return null;
     }
 
-    const iw = (window as ExtendedWindow).windSpec;
+    const iw = ((window as unknown) as ExtendedWindow).windSpec;
     const secondary = iw.role == "secondary";
 
     return (
@@ -189,7 +189,7 @@ interface Props {
   macos: boolean;
 }
 
-export default hookWithProps(TitleBar)(map => ({
+export default hookWithProps(TitleBar)((map) => ({
   tabInstance: map(
     (rs, props) => ambientWindState(rs).tabInstances[props.tab] || emptyObj
   ),

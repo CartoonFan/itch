@@ -39,9 +39,7 @@ class LanguageSettings extends React.PureComponent<Props> {
     }
 
     const badgeLang = lang ? lang.substr(0, 2) : "en";
-    const translationBadgeUrl = `${
-      urls.itchTranslationPlatform
-    }/widgets/itch/${badgeLang}/svg-badge.svg`;
+    const translationBadgeUrl = `${urls.itchTranslationPlatform}/widgets/itchio/${badgeLang}/itch/svg-badge.svg`;
 
     const downloading = this.props.downloading[lang];
 
@@ -103,9 +101,9 @@ interface Props {
   downloading: RootState["i18n"]["downloading"];
 }
 
-export default hook(map => ({
-  locales: map(rs => rs.i18n.locales),
-  lang: map(rs => rs.i18n.lang),
-  sniffedLang: map(rs => rs.system.sniffedLanguage),
-  downloading: map(rs => rs.i18n.downloading),
+export default hook((map) => ({
+  locales: map((rs) => rs.i18n.locales),
+  lang: map((rs) => rs.i18n.lang),
+  sniffedLang: map((rs) => rs.system.sniffedLanguage),
+  downloading: map((rs) => rs.i18n.downloading),
 }))(LanguageSettings);

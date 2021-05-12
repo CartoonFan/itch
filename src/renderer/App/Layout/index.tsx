@@ -4,15 +4,14 @@ import { DATE_FORMAT, formatDate } from "common/format/datetime";
 import { ambientWind } from "common/util/navigation";
 import React from "react";
 import ReactHintFactory from "react-hint";
-import { InjectedIntl } from "react-intl";
 import NonLocalIndicator from "renderer/App/Layout/NonLocalIndicator";
 import StatusBar from "renderer/App/Layout/StatusBar";
 import { hook } from "renderer/hocs/hook";
 import { ProfileProvider } from "renderer/hocs/withProfile";
 import styled, * as styles from "renderer/styles";
 import { TString } from "renderer/t";
-import { withIntl } from "renderer/hocs/withIntl";
 import Loadable from "react-loadable";
+import { injectIntl, IntlShape } from "react-intl";
 
 const GateScene = Loadable({
   loader: () => import("renderer/scenes/GateScene"),
@@ -26,9 +25,9 @@ const HubScene = Loadable({
 const ReactHint = ReactHintFactory(React);
 
 const LayoutContainer = styled.div`
-  background: ${props => props.theme.baseBackground};
-  color: ${props => props.theme.baseText};
-  font-size: ${props => props.theme.fontSizes.baseText};
+  background: ${(props) => props.theme.baseBackground};
+  color: ${(props) => props.theme.baseText};
+  font-size: ${(props) => props.theme.fontSizes.baseText};
 
   position: absolute;
   top: 0;
@@ -52,25 +51,25 @@ const ReactHintContainer = styled.div`
   .react-hint__content {
     padding: 5px;
     border-radius: 2px;
-    background: ${props => props.theme.tooltipBackground};
-    color: ${props => props.theme.tooltipText};
+    background: ${(props) => props.theme.tooltipBackground};
+    color: ${(props) => props.theme.tooltipText};
     font-size: 90%;
   }
 
   .react-hint--top:after {
-    border-top-color: ${props => props.theme.tooltipBackground};
+    border-top-color: ${(props) => props.theme.tooltipBackground};
   }
 
   .react-hint--left:after {
-    border-left-color: ${props => props.theme.tooltipBackground};
+    border-left-color: ${(props) => props.theme.tooltipBackground};
   }
 
   .react-hint--right:after {
-    border-right-color: ${props => props.theme.tooltipBackground};
+    border-right-color: ${(props) => props.theme.tooltipBackground};
   }
 
   .react-hint--bottom:after {
-    border-bottom-color: ${props => props.theme.tooltipBackground};
+    border-bottom-color: ${(props) => props.theme.tooltipBackground};
   }
 `;
 
@@ -145,14 +144,14 @@ interface Props {
   focused: boolean;
   profile: Profile;
 
-  intl: InjectedIntl;
+  intl: IntlShape;
 }
 
-export default withIntl(
-  hook(map => ({
-    maximized: map(rs => rs.winds[ambientWind()].native.maximized),
-    focused: map(rs => rs.winds[ambientWind()].native.focused),
-    ready: map(rs => !!(rs.setup.done && rs.profile.profile)),
-    profile: map(rs => rs.profile.profile),
+export default injectIntl(
+  hook((map) => ({
+    maximized: map((rs) => rs.winds[ambientWind()].native.maximized),
+    focused: map((rs) => rs.winds[ambientWind()].native.focused),
+    ready: map((rs) => !!(rs.setup.done && rs.profile.profile)),
+    profile: map((rs) => rs.profile.profile),
   }))(Layout)
 );

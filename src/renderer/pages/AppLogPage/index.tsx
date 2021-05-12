@@ -151,7 +151,7 @@ class AppLogPage extends React.PureComponent<Props, State> {
   queueFetch = () => {
     this.setState({ loading: true, error: null });
     this.doFetch()
-      .catch(e => {
+      .catch((e) => {
         this.setState({ error: e });
       })
       .then(() => {
@@ -160,9 +160,7 @@ class AppLogPage extends React.PureComponent<Props, State> {
   };
 
   doFetch = async () => {
-    const fs = await import("fs");
-    const { promisify } = await import("common/util/itch-promise");
-    const readFile = promisify(fs.readFile);
+    const promisedFs = (await import("fs")).promises;
 
     let filePath = this.props.file;
     if (filePath) {
@@ -171,7 +169,7 @@ class AppLogPage extends React.PureComponent<Props, State> {
       const { mainLogPath } = await import("common/util/paths");
       filePath = mainLogPath();
     }
-    const log = await readFile(filePath, { encoding: "utf8" });
+    const log = await promisedFs.readFile(filePath, { encoding: "utf8" });
     this.setState({ log, error: null });
   };
 
@@ -199,7 +197,7 @@ interface State {
 }
 
 export default withTab(
-  hookWithProps(AppLogPage)(map => ({
+  hookWithProps(AppLogPage)((map) => ({
     url: map((rs, props) => ambientTab(rs, props).location.url),
     file: map((rs, props) => ambientTab(rs, props).location.query.file),
   }))(AppLogPage)

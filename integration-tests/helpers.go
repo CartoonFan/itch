@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	gs "github.com/fasterthanlime/go-selenium"
+	gs "github.com/itchio/go-selenium"
 	"github.com/pkg/errors"
 )
 
@@ -322,8 +322,14 @@ func (r *runner) mustSwitchToWindow(handle string) {
 }
 
 var badFileCharRe = regexp.MustCompile("[^A-Za-z0-9-.]")
+var screenshotMaxNameLen = 100
 
 func (r *runner) takeScreenshot(name string) error {
+	r.logf("Taking screenshot with name: %s", name)
+	if len(name) > screenshotMaxNameLen {
+		name = name[:screenshotMaxNameLen]
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {

@@ -4,9 +4,12 @@ import { createSelector } from "reselect";
 import { RootState } from "common/types";
 import { actions } from "common/actions";
 
-const fallbackLang = "en";
+import { mainLogger } from "main/logger";
 
-export default function(watcher: Watcher) {
+const fallbackLang = "en";
+const logger = mainLogger.child(__filename);
+
+export default function (watcher: Watcher) {
   watcher.onStateChange({
     makeSelector: (store, schedule) =>
       createSelector(
@@ -14,6 +17,9 @@ export default function(watcher: Watcher) {
         (rs: RootState) => rs.preferences.lang,
         (sniffedLang, preferenceLang) => {
           const lang = preferenceLang || sniffedLang || fallbackLang;
+          logger.info(
+            `Language settings: preference ${preferenceLang}, sniffed ${sniffedLang}, fallback ${fallbackLang}`
+          );
           schedule.dispatch(actions.languageChanged({ lang }));
         }
       ),

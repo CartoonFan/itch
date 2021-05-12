@@ -1,6 +1,5 @@
 import yauzl from "yauzl";
 import progress from "progress-stream";
-import { ItchPromise, promisify } from "common/util/itch-promise";
 const crc32 = require("crc-32");
 const yauzlOpen = promisify(yauzl.open) as (
   path: string,
@@ -12,6 +11,7 @@ import { dirname, join } from "path";
 import { createWriteStream } from "fs";
 import { Logger } from "common/logger";
 import { ProgressInfo } from "common/types";
+import { promisify } from "util";
 
 interface UnzipOpts {
   archivePath: string;
@@ -24,7 +24,7 @@ const DIR_RE = /\/$/;
 
 export async function unzip(opts: UnzipOpts) {
   const { archivePath, destination, logger } = opts;
-  await sf.mkdirp(destination);
+  await sf.mkdir(destination);
 
   const zipfile = await yauzlOpen(archivePath, { lazyEntries: true });
   logger.debug(`Total zip entries: ${zipfile.entryCount}`);
@@ -45,14 +45,14 @@ export async function unzip(opts: UnzipOpts) {
     const entryPath = join(destination, entry.fileName);
     logger.info(`Extracting ${entryPath}`);
 
-    await sf.mkdirp(dirname(entryPath));
+    await sf.mkdir(dirname(entryPath));
     const dst = createWriteStream(entryPath);
     const progressStream = progress({
       length: entry.uncompressedSize,
       time: 100,
     });
     let progressFactor = entry.compressedSize / zipfile.fileSize;
-    progressStream.on("progress", info => {
+    progressStream.on("progress", (info) => {
       opts.onProgress({
         progress: progressOffset + (info.percentage / 100) * progressFactor,
       });
@@ -107,15 +107,15 @@ export async function unzip(opts: UnzipOpts) {
         _reject(err);
       };
 
-      src.on("error", err => {
+      src.on("error", (err) => {
         logger.warn(`Caught yauzl error: ${err.stack}`);
         reject(err);
       });
-      progressStream.on("error", err => {
+      progressStream.on("error", (err) => {
         logger.warn(`Caught progress stream error: ${err.stack}`);
         reject(err);
       });
-      dst.on("error", err => {
+      dst.on("error", (err) => {
         logger.warn(`Caught output stream error: ${err.stack}`);
         reject(err);
       });
@@ -134,14 +134,12 @@ export async function unzip(opts: UnzipOpts) {
     if (hash !== entry.crc32) {
       await sf.unlink(entryPath);
       throw new Error(
-        `CRC32 mismatch for ${entry.fileName}: expected ${
-          entry.crc32
-        } got ${hash}`
+        `CRC32 mismatch for ${entry.fileName}: expected ${entry.crc32} got ${hash}`
       );
     }
   };
 
-  await new ItchPromise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     zipfile.on("entry", (entry: yauzl.Entry) => {
       logger.debug(`→ ${entry.fileName}`);
       if (DIR_RE.test(entry.fileName)) {
@@ -149,19 +147,19 @@ export async function unzip(opts: UnzipOpts) {
         zipfile.readEntry();
       } else {
         // file entry
-        zipfile.openReadStream(entry, function(err, src) {
+        zipfile.openReadStream(entry, function (err, src) {
           extractEntry(entry, err, src)
             .then(() => {
               zipfile.readEntry();
             })
-            .catch(err => {
+            .catch((err) => {
               reject(err);
               zipfile.close();
             });
         });
       }
     });
-    zipfile.on("end", entry => {
+    zipfile.on("end", (entry) => {
       resolve();
     });
   });

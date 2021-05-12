@@ -15,10 +15,14 @@ import env from "common/env";
 
 import { net } from "electron";
 import { Readable } from "stream";
-import { ItchPromise } from "common/util/itch-promise";
 import { userAgent } from "common/constants/useragent";
+import { mainLogger } from "main/logger";
+import { fileSize } from "common/format/filesize";
+import { getResponseHeader } from "common/util/net";
 // TODO: revert that when Electron fixes their typings.
 type ActualElectronResponse = Electron.IncomingMessage & Readable;
+
+const logger = mainLogger.child("net/request");
 
 // use chromium's net API
 export async function request(
@@ -39,6 +43,7 @@ export async function request(
     }
   }
 
+  logger.debug(`HTTP ${method} ${url}`);
   const req = net.request({
     method,
     url,
@@ -46,9 +51,14 @@ export async function request(
   });
   req.setHeader("user-agent", userAgent());
 
-  const p = new ItchPromise<Response>((resolve, reject) => {
+  const p = new Promise<Response>((resolve, reject) => {
     req.on("response", (inputRes: any) => {
       const res = inputRes as ActualElectronResponse;
+      logger.debug(
+        `Got HTTP ${res.statusCode}, content-length: ${fileSize(
+          parseInt(getResponseHeader(res.headers, "content-length") || "0", 10)
+        )}`
+      );
       const response = {
         statusCode: res.statusCode,
         status: res.statusMessage,
@@ -71,7 +81,7 @@ export async function request(
         res.pipe(opts.sink());
       } else {
         res.setEncoding("utf8");
-        res.on("data", function(chunk) {
+        res.on("data", function (chunk) {
           text += chunk;
         });
       }
@@ -81,35 +91,41 @@ export async function request(
       ])[0];
       const contentType = /[^;]*/.exec(contentTypeHeader)![0];
 
-      res.on("end", async () => {
-        response.size = text.length;
+      let onEnd = async () => {
+        try {
+          response.size = text.length;
 
-        if (opts.sink) {
-          // all good, it's up to caller to wait on promised sink
-        } else if (contentType === "application/json") {
-          try {
-            response.body = JSON.parse(text);
-          } catch (e) {
-            reject(new RequestParsingFailure(e.message));
-            return;
+          if (opts.sink) {
+            // all good, it's up to caller to wait on promised sink
+          } else if (contentType === "application/json") {
+            try {
+              response.body = JSON.parse(text);
+            } catch (e) {
+              reject(new RequestParsingFailure(e.message));
+              return;
+            }
+          } else {
+            response.body = text;
           }
-        } else {
-          response.body = text;
+
+          resolve(response);
+        } catch (e) {
+          logger.error(`Request error: ${e.stack}`);
+          reject(new RequestError(e.message));
         }
-
-        resolve(response);
-      });
+      };
+      res.on("end", onEnd);
     });
 
-    req.on("error", error => {
-      reject(new RequestError(error.message));
+    req.on("error", (e) => {
+      reject(new RequestError(e.message));
     });
 
-    req.on("abort", (error: Error) => {
+    req.on("abort", (_e: Error) => {
       reject(new RequestAborted());
     });
 
-    req.on("login", (authInfo, callback) => {
+    req.on("login", (_authInfo, callback) => {
       // cf. https://github.com/electron/electron/blob/master/docs/api/client-request.md
       // "Providing empty credentials will cancel the request and report
       // an authentication error on the response object"

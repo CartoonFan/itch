@@ -36,13 +36,16 @@ export function hook<DerivedProps = {}>(
     return connect();
   }
   const selectors = makeSelectors(identity);
-  return connect(createStructuredSelector<RootState, DerivedProps>(selectors));
+  // FIXME: dirty typing workaround, seems to work in practice
+  return (connect(
+    createStructuredSelector<RootState, DerivedProps>(selectors)
+  ) as unknown) as any;
 }
 
 export function hookWithProps<InputProps>(
   inputComponent: React.ComponentType<InputProps>
 ) {
-  return function<DerivedProps>(
+  return function <DerivedProps>(
     makeSelectors: (
       f: MakeParametricSelectorFunc<InputProps>
     ) => {
@@ -55,7 +58,7 @@ export function hookWithProps<InputProps>(
   ) {
     const selectors = makeSelectors(identity);
     // wowee, there sure is a bunch of type fuckery here
-    return function<
+    return function <
       Props /* extends InputProps & DerivedProps & DispatchProp<any> */
     >(
       component: React.ComponentType<Props>

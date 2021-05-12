@@ -7,7 +7,7 @@ function buildLoginAndReturnUrl(returnTo: string): string {
   const parsed = url.parse(returnTo);
   const hostname = url.subdomainToDomain(parsed.hostname);
 
-  let urlOpts: url.UrlWithParsedQuery = {
+  let urlOpts: Partial<url.UrlWithParsedQuery> = {
     hostname,
     pathname: "/login",
     query: { return_to: returnTo },
@@ -23,7 +23,7 @@ function buildLoginAndReturnUrl(returnTo: string): string {
   return url.format(urlOpts);
 }
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.initiatePurchase, async (store, action) => {
     const { game } = action.payload;
     const purchaseUrl = game.url + "/purchase";

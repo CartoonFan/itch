@@ -48,7 +48,7 @@ function loadURL(wc: WebContents, url: string) {
   wc.loadURL(url);
 }
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.windHtmlFullscreenChanged, async (store, action) => {
     const { wind, htmlFullscreen } = action.payload;
 
@@ -79,7 +79,7 @@ export default function(watcher: Watcher) {
 
   watcher.on(actions.analyzePage, async (store, action) => {
     const { wind, tab, url } = action.payload;
-    await withWebContents(store, wind, tab, async wc => {
+    await withWebContents(store, wind, tab, async (wc) => {
       const onNewPath = (url: string, resource: string) => {
         if (resource) {
           logger.debug(`Got resource ${resource}`);
@@ -105,7 +105,7 @@ export default function(watcher: Watcher) {
 
   watcher.on(actions.tabReloaded, async (store, action) => {
     const { wind, tab } = action.payload;
-    withWebContents(store, wind, tab, wc => {
+    withWebContents(store, wind, tab, (wc) => {
       wc.reload();
     });
   });
@@ -113,7 +113,7 @@ export default function(watcher: Watcher) {
   watcher.on(actions.commandStop, async (store, action) => {
     const { wind } = action.payload;
     const { tab } = store.getState().winds[wind].navigation;
-    withWebContents(store, wind, tab, wc => {
+    withWebContents(store, wind, tab, (wc) => {
       wc.stop();
     });
   });
@@ -151,7 +151,7 @@ export default function(watcher: Watcher) {
     const { wind, tab } = action.payload;
     if (tab) {
       const { tab } = store.getState().winds[wind].navigation;
-      withWebContents(store, wind, tab, wc => {
+      withWebContents(store, wind, tab, (wc) => {
         wc.openDevTools({ mode: "detach" });
       });
     } else {
@@ -236,7 +236,7 @@ export default function(watcher: Watcher) {
       return;
     }
 
-    withWebContents(store, wind, tab, wc => {
+    withWebContents(store, wind, tab, (wc) => {
       let offset = index - oldIndex;
       const url = rs.winds[wind].tabInstances[tab].history[index].url;
       if (
@@ -280,7 +280,7 @@ export default function(watcher: Watcher) {
       return;
     }
 
-    withWebContents(store, wind, tab, async wc => {
+    withWebContents(store, wind, tab, async (wc) => {
       const webUrl = wc.history[wc.currentIndex];
       if (webUrl !== url) {
         logger.debug(
@@ -319,9 +319,7 @@ async function hookWebContents(
   wc.on("certificate-error", (ev, url, error, certificate, cb) => {
     cb(false);
     logger.warn(
-      `Certificate error ${error} for ${url}, issued by ${
-        certificate.issuerName
-      } for ${certificate.subjectName}`
+      `Certificate error ${error} for ${url}, issued by ${certificate.issuerName} for ${certificate.subjectName}`
     );
   });
 
@@ -380,9 +378,8 @@ async function hookWebContents(
     "new-window",
     (ev, url, frameName, disposition, options, additionalFeatures) => {
       ev.preventDefault();
-      logger.debug(`new-window fired for ${url}, navigating instead`);
-      const background = disposition === "background-tab";
-      store.dispatch(actions.navigate({ url, wind, background }));
+      logger.debug(`new-window fired for ${url}`);
+      wc.loadURL(url);
     }
   );
 
@@ -417,6 +414,7 @@ async function hookWebContents(
     if (wc.history.length === 0) {
       logger.debug(`(The webcontents history are empty for some reason)`);
     } else {
+      logger.debug("WebContents history:");
       for (let i = 0; i < wc.history.length; i++) {
         let prevMark = i === previousIndex ? "<" : " ";
         let pendMark = i === wc.pendingIndex ? "P" : " ";
@@ -430,6 +428,7 @@ async function hookWebContents(
   let printStateHistory = () => {
     const space = Space.fromStore(store, wind, tab);
     logger.debug(`---------------------------------`);
+    logger.debug("State history:");
     for (let i = 0; i < space.history().length; i++) {
       const page = space.history()[i];
       logger.debug(`S| ${i === space.currentIndex() ? ">" : " "} ${page.url}`);
@@ -442,6 +441,7 @@ async function hookWebContents(
   };
 
   const commit = (
+    reason: "will-navigate" | "did-navigate" | "did-navigate-in-page",
     event: any,
     url: string, // latest URL
     inPage: boolean, // in-page navigation (HTML5 pushState/popState/replaceState)
@@ -451,9 +451,7 @@ async function hookWebContents(
       // We get those spurious events after a "clear history & loadURL()"
       // at this point `wc.history.length` is 0 anyway, so it's not like we
       // can figure out much. They're followed by a meaningful event shortly after.
-      logger.debug(
-        `Ignoring navigation-entry-committed with negative currentIndex`
-      );
+      logger.debug(`Ignoring commit with negative currentIndex`);
       return;
     }
 
@@ -481,11 +479,9 @@ async function hookWebContents(
 
     logger.debug("\n");
     logger.debug(`=================================`);
-    logger.debug(`navigation-entry-committed ${url}`);
+    logger.debug(`commit ${url}, reason ${reason}`);
     logger.debug(
-      `currentIndex ${wc.currentIndex} pendingIndex ${
-        wc.pendingIndex
-      } inPageIndex ${wc.inPageIndex} inPage ${inPage}`
+      `currentIndex ${wc.currentIndex} pendingIndex ${wc.pendingIndex} inPageIndex ${wc.inPageIndex} inPage ${inPage}`
     );
 
     printWebContentsHistory(previousIndex);
@@ -507,20 +503,6 @@ async function hookWebContents(
         label: wcTitle,
       });
     }
-
-    // The logic that follows may not make sense to the casual observer.
-    // Let's recap our assumptions:
-    //   - The Redux state (ie. Space.history(), Space.currentIndex(), etc.)
-    //     should always mirror Electron's navigation controller history.
-    //   - Navigation can occur in-page (in which case it's important to
-    //     call webContents.{goBack,goForward,goToOffset}), or it can be http-level
-    //     navigation (in which case Electron's navigation controller restarts the
-    //     renderer process anyway - because "just using Chrome's navigation controller"
-    //     apparently broke nodeIntegration (which we don't use for web tabs anyway...))
-    //   - Navigation can be triggered by the itch app (actions.tabGoBack is dispatched, etc.)
-    //     or by the webContents (window.history.go(-1), pushState, clicking on a link, etc.)
-    //   - We choose not to rely on events like `did-start-navigation` (Electron 3.x+),
-    //     `did-navigate`, `did-navigate-in-page` etc. to avoid race conditions
 
     let offset = wc.currentIndex - previousIndex;
     let sizeOffset = wc.history.length - previousHistorySize;
@@ -557,7 +539,7 @@ async function hookWebContents(
     }
 
     if (sizeOffset === 0) {
-      logger.debug(`History stayed the same size, offset is ${1}`);
+      logger.debug(`History stayed the same size, offset is ${offset}`);
       if (offset === 1) {
         if (stateURL === url) {
           logger.debug(`web and state point to same URL, doing nothing`);
@@ -597,8 +579,21 @@ async function hookWebContents(
           printStateHistory();
           return;
         } else {
-          logger.debug(`Not a replace, doing nothing.`);
-          return;
+          const index = space.currentIndex();
+          let prevURL = getStateURL(index - 1);
+          let webURL = wc.history[wc.currentIndex];
+          logger.debug(`prevURL = ${prevURL}`);
+          logger.debug(` webURL = ${webURL}`);
+          if (prevURL === webURL) {
+            logger.debug(
+              `looks like a forward navigation, but previous is a dupe`
+            );
+            didNavigate(url, NavMode.Replace);
+            return;
+          } else {
+            logger.debug(`Not a replace, doing nothing.`);
+            return;
+          }
         }
       }
 
@@ -641,5 +636,10 @@ async function hookWebContents(
     }
     return;
   };
-  wc.on("navigation-entry-commited" as any, commit);
+  wc.on("did-navigate", (event, url) => {
+    commit("did-navigate", event, url, false, false);
+  });
+  wc.on("did-navigate-in-page", (event, url) => {
+    commit("did-navigate-in-page", event, url, true, false);
+  });
 }

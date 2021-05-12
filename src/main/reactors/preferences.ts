@@ -1,5 +1,4 @@
 import { actions } from "common/actions";
-import { ItchPromise } from "common/util/itch-promise";
 import { partitionForUser } from "common/util/partition-for-user";
 import { mainLogPath, preferencesPath } from "common/util/paths";
 import { Watcher } from "common/util/watcher";
@@ -11,7 +10,7 @@ const logger = mainLogger.child(__filename);
 
 let saveAtomicInvocations = 0;
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.updatePreferences, async (store, action) => {
     const prefs = store.getState().preferences;
 

@@ -30,7 +30,7 @@ function reschedule(store: Store) {
   );
 }
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   if (SKIP_GAME_UPDATES) {
     logger.debug(
       "Skipping game update check as requested per environment variable"
@@ -70,14 +70,17 @@ export default function(watcher: Watcher) {
         })
       );
 
-      const res = await mcall(messages.CheckUpdate, {}, convo => {
+      const res = await mcall(messages.CheckUpdate, {}, (convo) => {
         hookLogging(convo, logger);
 
-        convo.on(messages.GameUpdateAvailable, async ({ update }) => {
-          store.dispatch(actions.gameUpdateAvailable({ update }));
-        });
+        convo.onNotification(
+          messages.GameUpdateAvailable,
+          async ({ update }) => {
+            store.dispatch(actions.gameUpdateAvailable({ update }));
+          }
+        );
 
-        convo.on(messages.Progress, async ({ progress }) => {
+        convo.onNotification(messages.Progress, async ({ progress }) => {
           store.dispatch(
             actions.gameUpdateCheckStatus({
               checking: true,

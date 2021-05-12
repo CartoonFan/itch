@@ -26,6 +26,7 @@ import {
 } from "renderer/hocs/tab-utils";
 
 const HTTPS_RE = /^https:\/\//;
+const HTTP_RE = /^http:\/\//;
 const ITCH_RE = /^itch:\/\//;
 
 const NavigationBarDiv = styled.div`
@@ -47,7 +48,7 @@ const NavigationBarDiv = styled.div`
       content: " ";
       width: 100%;
       height: 2px;
-      background: ${props => props.theme.accent};
+      background: ${(props) => props.theme.accent};
       animation: ${styles.animations.lineSpinner} 2s ease-in-out infinite;
     }
   }
@@ -238,7 +239,11 @@ class NavigationBar extends React.PureComponent<Props, State> {
   }
 
   renderURL(url: string): JSX.Element {
-    if (HTTPS_RE.test(url)) {
+    let isHTTP = HTTP_RE.test(url);
+    let isHTTPS = HTTPS_RE.test(url);
+    let isItch = ITCH_RE.test(url);
+
+    if (isHTTPS) {
       return (
         <span>
           <span className="security-theater-bit">{"https://"}</span>
@@ -247,13 +252,17 @@ class NavigationBar extends React.PureComponent<Props, State> {
       );
     }
 
-    if (ITCH_RE.test(url)) {
+    if (isItch) {
       return (
         <span>
           <span className="fluff-bit">{"itch://"}</span>
           {url.replace(ITCH_RE, "")}
         </span>
       );
+    }
+
+    if (!(isHTTP || isHTTPS || isItch)) {
+      return null;
     }
 
     return <>{url}</>;
@@ -331,7 +340,7 @@ interface State {
 }
 
 export default withTab(
-  hookWithProps(NavigationBar)(map => ({
+  hookWithProps(NavigationBar)((map) => ({
     url: map((rs, props) => ambientTab(rs, props).location.url),
     internalPage: map(
       (rs, props) => ambientTab(rs, props).location.internalPage

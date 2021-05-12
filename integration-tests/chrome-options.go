@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	gs "github.com/fasterthanlime/go-selenium"
+	gs "github.com/itchio/go-selenium"
 	"github.com/pkg/errors"
 )
 
@@ -30,6 +31,11 @@ func (opts *ChromeOptions) Apply(caps *gs.Capabilities) {
 }
 
 func (r *runner) GetChromeOptions() (*ChromeOptions, error) {
+	remoteDebuggingPort, err := getFreePort()
+	if err != nil {
+		return nil, err
+	}
+
 	opts := &ChromeOptions{
 		Binary: "",
 		Args: []string{
@@ -37,7 +43,10 @@ func (r *runner) GetChromeOptions() (*ChromeOptions, error) {
 			"--no-sandbox",
 			"--disable-dev-shm-usage",
 			// cf. https://bugs.chromium.org/p/chromedriver/issues/detail?id=2489#c20
-			"--remote-debugging-port=9222",
+			// traditionally '9222', but apparently chromedriver still works with
+			// other ports. We pick a free port so that concurrent CI runs still work.
+			fmt.Sprintf("--remote-debugging-port=%d", remoteDebuggingPort),
+			"--color",
 		},
 	}
 
@@ -87,10 +96,15 @@ func (r *runner) GetChromeOptions() (*ChromeOptions, error) {
 	opts.Binary = binaryPath
 	opts.AddArg("app=" + appPath)
 
-	r.logf("But first, let's bundle all that javascript...")
-	err = r.bundle()
-	if err != nil {
-		return nil, errors.WithMessage(err, "while bundling")
+	if os.Getenv("DONT_BUNDLE") == "1" {
+		r.logf("Skipping bundle, because $DONT_BUNDLE is set to 1")
+	} else {
+		r.logf("But first, let's bundle all that javascript...")
+		err = r.bundle()
+		if err != nil {
+			return nil, errors.WithMessage(err, "while bundling")
+		}
+		r.logf("✓ Everything is bundled!")
 	}
 	r.logf("✓ Everything is bundled!")
 

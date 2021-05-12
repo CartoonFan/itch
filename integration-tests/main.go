@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	gs "github.com/fasterthanlime/go-selenium"
 	"github.com/hpcloud/tail"
+	gs "github.com/itchio/go-selenium"
 	"github.com/logrusorgru/aurora"
 	"github.com/onsi/gocleanup"
 	"github.com/pkg/errors"
@@ -21,9 +22,9 @@ import (
 
 const stampFormat = "15:04:05.999"
 
-const testAccountName = "itch-test-account"
-
-var testAccountAPIKey = os.Getenv("ITCH_TEST_ACCOUNT_API_KEY")
+// Test account name is: itch-test-account
+var testAccountAPIKeyEnvVar = "ITCH_TEST_ACCOUNT_API_KEY"
+var testAccountAPIKey = os.Getenv(testAccountAPIKeyEnvVar)
 
 type CleanupFunc func()
 
@@ -39,6 +40,8 @@ type runner struct {
 	cleanup            CleanupFunc
 	testStart          time.Time
 	readyForScreenshot bool
+
+	mainWindow string
 }
 
 func (r *runner) chromelogf(format string, args ...interface{}) {
@@ -86,14 +89,15 @@ func doMain() error {
 	bootTime := time.Now()
 
 	if testAccountAPIKey == "" {
-		return errors.New("API key not given via environment, stopping here")
+		return errors.Errorf("$%s not set, stopping here", testAccountAPIKeyEnvVar)
 	}
 
 	r = &runner{
 		prefix:       "tmp",
-		logger:       log.New(os.Stdout, "• ", log.Ltime|log.Lmicroseconds),
-		chromeLogger: log.New(os.Stdout, "[chrome] ", log.Ltime|log.Lmicroseconds),
+		logger:       log.New(os.Stdout, "=== ", log.Ltime|log.Lmicroseconds),
+		chromeLogger: log.New(os.Stdout, "️💻 ", 0),
 		errLogger:    log.New(os.Stderr, "❌ ", log.Ltime|log.Lmicroseconds),
+		testStart:    time.Now(),
 	}
 	must(os.RemoveAll(r.prefix))
 	must(os.RemoveAll("screenshots"))
@@ -107,9 +111,12 @@ func doMain() error {
 	must(downloadChromeDriver(r))
 	r.logf("✓ ChromeDriver is set up!")
 
-	chromeDriverStartupChan := make(chan bool)
+	chromeDriverStartupChan := make(chan struct{})
 
-	chromeDriverPort := 9515
+	chromeDriverPort, err := getFreePort()
+	must(err)
+	r.logf("Picked ChromeDriver port %d", chromeDriverPort)
+
 	chromeDriverLogPath := filepath.Join(cwd, "chrome-driver.log.txt")
 	chromeDriverCtx, chromeDriverCancel := context.WithCancel(context.Background())
 	r.chromeDriverCmd = exec.CommandContext(chromeDriverCtx, r.chromeDriverExe, fmt.Sprintf("--port=%d", chromeDriverPort), fmt.Sprintf("--log-path=%s", chromeDriverLogPath), "--verbose")
@@ -126,8 +133,9 @@ func doMain() error {
 	go func() {
 		s := bufio.NewScanner(cdoutR)
 		for s.Scan() {
-			r.chromelogf("%s", s.Text())
-			if strings.Contains(s.Text(), "Only local connections are allowed") {
+			line := s.Text()
+			r.chromelogf("%s", line)
+			if strings.Contains(line, "ChromeDriver was started successfully") {
 				close(chromeDriverStartupChan)
 			}
 		}
@@ -147,8 +155,6 @@ func doMain() error {
 	setupWatch := makeLogWatch(regexp.MustCompile("Setup done"))
 
 	go func() {
-		logger := log.New(os.Stdout, "★ ", 0)
-
 		t, err := tail.TailFile(filepath.Join(cwd, r.prefix, "prefix", "userData", "logs", "itch.txt"), tail.Config{
 			Follow: true,
 			Poll:   true,
@@ -165,7 +171,14 @@ func doMain() error {
 					logWatches = logWatches[:len(logWatches)-1]
 				}
 			}
-			logger.Print(line.Text)
+
+			// TODO: parse JSON, print in structured format
+			ill, err := parseLogLine(line.Text)
+			if err != nil {
+				r.chromeLogger.Printf("could not parse itch log line: %s", line.Text)
+			} else {
+				r.chromeLogger.Printf("%s", ill)
+			}
 		}
 	}()
 
@@ -181,7 +194,14 @@ func doMain() error {
 
 	r.cleanup = func() {
 		r.logf("deleting session")
-		r.driver.DeleteSession()
+		if r.driver != nil {
+			_, err := r.driver.DeleteSession()
+			if err != nil {
+				r.logf("could not delete session: %+s", err)
+			}
+		} else {
+			r.logf("no driver yet!")
+		}
 
 		r.logf("cancelling chrome-driver context...")
 		chromeDriverCancel()
@@ -202,6 +222,9 @@ func doMain() error {
 
 	gocleanup.Register(r.cleanup)
 
+	// Work around https://bugs.chromium.org/p/chromium/issues/detail?id=264818
+	os.Setenv("MESA_GLSL_CACHE_DISABLE", "true")
+
 	// Create capabilities, driver etc.
 	capabilities := gs.Capabilities{}
 	capabilities.SetBrowser(gs.ChromeBrowser())
@@ -213,13 +236,6 @@ func doMain() error {
 	log.Printf("Got chrome options: %#v", chromeOpts)
 	chromeOpts.Apply(&capabilities)
 
-	driver, err := gs.NewSeleniumWebDriver(fmt.Sprintf("http://127.0.0.1:%d", chromeDriverPort), capabilities)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	r.driver = driver
-
 	r.logf("Waiting for chrome driver to be fully started")
 	select {
 	case <-chromeDriverStartupChan:
@@ -228,6 +244,13 @@ func doMain() error {
 		r.logf("Timed out waiting for chrome driver to start listening...")
 		gocleanup.Exit(1)
 	}
+
+	driver, err := gs.NewSeleniumWebDriver(fmt.Sprintf("http://127.0.0.1:%d", chromeDriverPort), capabilities)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	r.driver = driver
 
 	tryCreateSession := func() error {
 		beforeCreateTime := time.Now()
@@ -245,6 +268,9 @@ func doMain() error {
 		if err != nil {
 			panic(errors.WithStack(err))
 		}
+
+		r.mainWindow = r.mustGetCurrentWindow()
+
 		return nil
 	}
 
@@ -267,7 +293,6 @@ func doMain() error {
 
 	r.logf("Waiting for setup to be done...")
 	must(setupWatch.WaitWithTimeout(60 * time.Second))
-	r.testStart = time.Now()
 
 	allFlows(r)
 
@@ -336,4 +361,19 @@ func must(err error) {
 			gocleanup.Exit(1)
 		}
 	}
+}
+
+// getFreePort asks the kernel for a free open port that is ready to use.
+func getFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
 }

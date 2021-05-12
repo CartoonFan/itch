@@ -4,7 +4,6 @@ import env from "common/env";
 import { t } from "common/format/t";
 import { currentRuntime } from "common/os/runtime";
 import { isCancelled } from "common/types";
-import { ItchPromise } from "common/util/itch-promise";
 import { app, dialog, shell } from "electron";
 import { isNetworkError } from "main/net/errors";
 import { exit } from "main/os/exit";
@@ -155,7 +154,7 @@ async function handle(type: ErrorType, e: Error) {
   if (response === 0) {
     reportIssue({ log });
   } else if (response === 1) {
-    shell.openItem(crashFile);
+    shell.openPath(crashFile);
   } else if (response === 3) {
     // ignore and continue
     return;
@@ -178,7 +177,7 @@ function makeHandler(type: ErrorType) {
     }
 
     handle(type, e)
-      .catch(e2 => {
+      .catch((e2) => {
         // well, we tried.
         logger.error(`Error in crash-reporter (${type})\n${e2.stack}`);
       })

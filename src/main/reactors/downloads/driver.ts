@@ -9,7 +9,7 @@ import { Conversation } from "butlerd";
 
 const logger = mainLogger.child(__filename);
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   // we don't have to worry about login because we start out with paused downloads
   // and it unpauses them on login.
 
@@ -63,29 +63,41 @@ async function driverPoll(store: Store) {
         state.setPhase(Phase.STARTING);
         let driveConvo: Conversation;
         try {
-          await mcall(messages.DownloadsDrive, {}, convo => {
+          await mcall(messages.DownloadsDrive, {}, (convo) => {
             hookLogging(convo, logger);
             state.registerConvo(convo);
             driveConvo = convo;
 
-            convo.on(messages.DownloadsDriveStarted, async ({ download }) => {
-              await refreshDownloads(store);
-            });
+            convo.onNotification(
+              messages.DownloadsDriveStarted,
+              async ({ download }) => {
+                await refreshDownloads(store);
+              }
+            );
 
-            convo.on(messages.DownloadsDriveDiscarded, async ({ download }) => {
-              await refreshDownloads(store);
-            });
+            convo.onNotification(
+              messages.DownloadsDriveDiscarded,
+              async ({ download }) => {
+                await refreshDownloads(store);
+              }
+            );
 
-            convo.on(messages.DownloadsDriveErrored, async ({ download }) => {
-              await refreshDownloads(store);
-            });
+            convo.onNotification(
+              messages.DownloadsDriveErrored,
+              async ({ download }) => {
+                await refreshDownloads(store);
+              }
+            );
 
-            convo.on(messages.DownloadsDriveFinished, async ({ download }) => {
-              await refreshDownloads(store);
-              store.dispatch(actions.downloadEnded({ download }));
-            });
+            convo.onNotification(
+              messages.DownloadsDriveFinished,
+              async ({ download }) => {
+                await refreshDownloads(store);
+                store.dispatch(actions.downloadEnded({ download }));
+              }
+            );
 
-            convo.on(
+            convo.onNotification(
               messages.DownloadsDriveProgress,
               async ({ download, progress, speedHistory }) => {
                 store.dispatch(

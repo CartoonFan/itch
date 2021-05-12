@@ -6,7 +6,7 @@ import { modals } from "common/modals";
 import { promisedModal } from "main/reactors/modals";
 import asTask from "main/reactors/tasks/as-task";
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.switchVersionCaveRequest, async (store, action) => {
     const { cave } = action.payload;
 
@@ -19,8 +19,8 @@ export default function(watcher: Watcher) {
         await mcall(
           messages.InstallVersionSwitchQueue,
           { caveId: cave.id },
-          client => {
-            client.on(
+          (client) => {
+            client.onRequest(
               messages.InstallVersionSwitchPick,
               async ({ cave, upload, builds }) => {
                 const response = await promisedModal(

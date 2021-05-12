@@ -1,7 +1,6 @@
 import { DateFormat, DATE_FORMAT, formatDate } from "common/format/datetime";
 import React from "react";
-import { InjectedIntl } from "react-intl";
-import { withIntl } from "renderer/hocs/withIntl";
+import { injectIntl, IntlShape } from "react-intl";
 
 class CustomDate extends React.PureComponent<Props> {
   render() {
@@ -22,9 +21,9 @@ class CustomDate extends React.PureComponent<Props> {
 }
 
 interface Props {
-  date: Date;
+  date: Date | string;
   format?: DateFormat;
-  intl: InjectedIntl;
+  intl: IntlShape;
 }
 
-export default withIntl(CustomDate);
+export default injectIntl(CustomDate);

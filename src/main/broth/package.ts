@@ -7,18 +7,15 @@ import spawn from "main/os/spawn";
 import { dirname, join } from "path";
 import querystring from "querystring";
 import * as semver from "semver";
-import { promisify } from "util";
-import whichCallback from "which";
+import which from "which";
 import { downloadToFileWithRetry } from "main/net/download";
 import { request } from "main/net/request/metal-request";
 import * as sf from "main/os/sf";
-import { mkdirp, readdir } from "main/os/sf";
+import { mkdir, readdir } from "main/os/sf";
 import { delay } from "main/reactors/delay";
 import formulas, { FormulaSpec } from "main/broth/formulas";
 import { goarch, goos } from "main/broth/platform";
 import { unzip } from "main/broth/unzip";
-
-const which = promisify(whichCallback);
 
 const sanityCheckTimeout = 10000;
 const platform = `${goos()}-${goarch()}`;
@@ -110,10 +107,10 @@ export class Package implements PackageLike {
         throw new Error(`got HTTP ${res.statusCode} while fetching (${url})`);
       }
 
-      const versionsRes = res.body as VersionsRes;
+      const versionsRes = JSON.parse(res.body) as VersionsRes;
       if (!versionsRes.versions) {
         throw new Error(
-          `got invalid response from broth server: expected JSON object with 'broth' field, got: ${JSON.stringify(
+          `got invalid response from broth server: expected JSON object with 'versions' field, got: ${JSON.stringify(
             versionsRes
           )}`
         );
@@ -180,7 +177,7 @@ export class Package implements PackageLike {
       return;
     }
 
-    await mkdirp(this.getVersionsDir());
+    await mkdir(this.getVersionsDir());
 
     const chosenVersion = await this.getChosenVersion();
     if (chosenVersion) {
@@ -339,7 +336,7 @@ export class Package implements PackageLike {
       logger.info(`...to (${archivePath})`);
 
       await downloadToFileWithRetry(
-        info => {
+        (info) => {
           let newInfo = {
             ...info,
             progress: downloadStart + info.progress * downloadWeight,
@@ -350,6 +347,7 @@ export class Package implements PackageLike {
         archiveUrl,
         archivePath
       );
+      logger.info(`Download completed.`);
 
       this.stage("install");
       logger.info(`Extracting...`);
@@ -360,7 +358,7 @@ export class Package implements PackageLike {
         archivePath,
         destination: versionPrefix,
         logger,
-        onProgress: info => {
+        onProgress: (info) => {
           let newInfo = {
             ...info,
             progress: extractStart + info.progress * extractWeight,
@@ -471,7 +469,7 @@ export class Package implements PackageLike {
       logger.warn(`Sanity check failed: ${e.message}`);
       return false;
     } finally {
-      ctx.tryAbort().catch(e => {
+      ctx.tryAbort().catch((e) => {
         logger.warn(`While aborting validation context: ${e.stack}`);
       });
     }

@@ -3,7 +3,6 @@ import { messages, hookLogging } from "common/butlerd";
 import { Profile } from "common/butlerd/messages";
 import urls from "common/constants/urls";
 import { Store } from "common/types";
-import { ItchPromise } from "common/util/itch-promise";
 import { partitionForUser } from "common/util/partition-for-user";
 import { Watcher } from "common/util/watcher";
 import { mcall } from "main/butlerd/mcall";
@@ -20,7 +19,7 @@ import { withTimeout } from "common/helpers/with-timeout";
 const logger = mainLogger.child(__filename);
 const LOGIN_TIMEOUT = 5 * 1000; // 5 seconds
 
-export default function(watcher: Watcher) {
+export default function (watcher: Watcher) {
   watcher.on(actions.loginWithPassword, async (store, action) => {
     const { username, password } = action.payload;
 
@@ -31,7 +30,6 @@ export default function(watcher: Watcher) {
       // integration tests for the integration test goddess
       if (username === "#api-key") {
         logger.info(`Doing direct API key login...`);
-        const t1 = Date.now();
         const { profile } = await withTimeout(
           "API key login",
           LOGIN_TIMEOUT,
@@ -39,25 +37,22 @@ export default function(watcher: Watcher) {
             apiKey: password,
           })
         );
-        const t2 = Date.now();
-        logger.debug(
-          `ProfileLoginWithAPIKey call succeeded in ${elapsed(t1, t2)}`
-        );
+        logger.debug(`ProfileLoginWithAPIKey call succeeded`);
         await loginSucceeded(store, profile);
         return;
       }
 
       logger.info(`Doing username/password login...`);
-      const t1 = Date.now();
       const { profile, cookie } = await mcall(
         messages.ProfileLoginWithPassword,
         {
           username,
           password,
+          forceRecaptcha: process.env.ITCH_FORCE_RECAPTCHA === "1",
         },
-        client => {
+        (client) => {
           logger.debug(`Setting up handlers for TOTP & captcha`);
-          client.on(
+          client.onRequest(
             messages.ProfileRequestCaptcha,
             async ({ recaptchaUrl }) => {
               logger.info(`Showing captcha`);
@@ -85,7 +80,7 @@ export default function(watcher: Watcher) {
             }
           );
 
-          client.on(messages.ProfileRequestTOTP, async () => {
+          client.onRequest(messages.ProfileRequestTOTP, async () => {
             logger.info(`Showing TOTP`);
             const modalRes = await promisedModal(
               store,
@@ -141,7 +136,7 @@ export default function(watcher: Watcher) {
           {
             profileId,
           },
-          convo => {
+          (convo) => {
             hookLogging(convo, logger);
           }
         )
@@ -167,7 +162,7 @@ export default function(watcher: Watcher) {
 }
 
 const YEAR_IN_SECONDS =
-    365.25 /* days */ * 24 /* hours */ * 60 /* minutes */ * 60 /* seconds */;
+  365.25 /* days */ * 24 /* hours */ * 60 /* minutes */ * 60; /* seconds */
 
 async function setCookie(profile: Profile, cookie: { [key: string]: string }) {
   const partition = partitionForUser(String(profile.user.id));
@@ -229,7 +224,7 @@ async function loginSucceeded(store: Store, profile: Profile) {
         fresh: true,
         limit: 1,
       },
-      convo => {
+      (convo) => {
         hookLogging(convo, logger);
       }
     );

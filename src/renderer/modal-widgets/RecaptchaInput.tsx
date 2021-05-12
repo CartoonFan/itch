@@ -59,6 +59,8 @@ class RecaptchaInput extends React.PureComponent<RecaptchaInputProps, State> {
           ref={this.gotWebview}
           src={url}
           preload={getInjectURL("captcha")}
+          enableremotemodule="false"
+          webpreferences="worldSafeExecuteJavaScript"
         />
       </WidgetDiv>
     );
@@ -76,7 +78,7 @@ class RecaptchaInput extends React.PureComponent<RecaptchaInputProps, State> {
       this.setState({ loaded: true });
     });
 
-    this.checker = setInterval(() => {
+    this.checker = window.setInterval(() => {
       this.webview
         .executeJavaScript(`window.captchaResponse`, false)
         .then((response: string | undefined) => {
@@ -92,7 +94,7 @@ class RecaptchaInput extends React.PureComponent<RecaptchaInputProps, State> {
             );
           }
         })
-        .catch(e => {
+        .catch((e) => {
           console.error(e);
         });
     }, 500);
