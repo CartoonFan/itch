@@ -145,7 +145,7 @@
     "webpack-dev-server": "^3.7.2",
     "webpack-log": "^2.0.0",
     "webpack-merge": "^4.2.1",
-    "ws": "^7.0.1"
+    "ws": "^7.4.6"
   },
   "scripts": {
     "start": "node develop.js",
