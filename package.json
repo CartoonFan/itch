@@ -49,7 +49,7 @@
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-fast-compare": "^3.2.0",
-    "react-hint": "^3.2.0",
+    "react-hint": "^3.2.1",
     "react-intl": "^5.12.0",
     "react-json-inspector": "^7.1.1",
     "react-loadable": "^5.5.0",
