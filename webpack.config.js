@@ -1,4 +1,4 @@
-const { NamedModulesPlugin } = require("webpack");
+const webpack = require('webpack')
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 const HappyPack = require("happypack");
 const WebpackBuildNotifierPlugin = require("webpack-build-notifier");
@@ -26,6 +26,7 @@ module.exports = (_notSureWhatThatArgumentDoes, env) => {
         main: ["./src/main/index.ts"],
         "inject-game": ["./src/main/inject/inject-game.ts"],
         "inject-captcha": ["./src/main/inject/inject-captcha.ts"],
+        "inject-preload": ["./src/main/inject/inject-preload.ts"],
       },
       plugins: [
         new CleanWebpackPlugin(),
@@ -35,7 +36,7 @@ module.exports = (_notSureWhatThatArgumentDoes, env) => {
       ],
     }),
     merge(getCommonConfig("renderer", env), {
-      target: "electron-renderer",
+      target: "web",
       resolve: {
         mainFields: ["browser", "module", "main"],
       },
@@ -65,7 +66,10 @@ module.exports = (_notSureWhatThatArgumentDoes, env) => {
           template: path.resolve(`./src/index.ejs`),
           minify: false,
         }),
-        new NamedModulesPlugin(),
+        new webpack.ProvidePlugin({
+          process: "process/browser",
+          Buffer: ['buffer', 'Buffer'],
+        }),
       ],
       devServer: {
         hot: true,
@@ -90,7 +94,8 @@ function getCommonConfig(type, env) {
     output: {
       filename: "[name].bundle.js",
       chunkFilename: "[name].chunk.js",
-      libraryTarget: "commonjs2",
+      libraryTarget: "var",
+      library: "LIB",
       path: path.resolve(`./dist/${type}`),
     },
     resolve: {

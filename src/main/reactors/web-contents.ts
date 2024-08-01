@@ -34,11 +34,24 @@ function withWebContents<T>(
   return null;
 }
 
-function loadURL(wc: WebContents, url: string) {
+function loadURL(wc: WebContents, url: string): boolean {
   if (ITCH_URL_RE.test(url)) {
-    return;
+    return true;
   }
-  wc.loadURL(url);
+
+  // Because of restrictions elsewhere, this likely only
+  // occurs if the most recent url in a given tab was an
+  // external page back when the app permitted that
+  const parsedUrl = new URL(url);
+  if (
+    parsedUrl.origin.endsWith(".itch.io") ||
+    parsedUrl.origin.endsWith("/itch.io")
+  ) {
+    wc.loadURL(url);
+    return true;
+  }
+
+  return false;
 }
 
 export default function (watcher: Watcher) {
@@ -335,14 +348,16 @@ async function hookWebContents(
     });
   });
 
-  wc.on(
-    "new-window",
-    (ev, url, frameName, disposition, options, additionalFeatures) => {
-      ev.preventDefault();
-      logger.debug(`new-window fired for ${url}`);
-      wc.loadURL(url);
+  wc.setWindowOpenHandler(({ url }) => {
+    logger.debug(`new-window fired for ${url}`);
+
+    if (!loadURL(wc, url)) {
+      // url wasn't handled by the current web-contents, open
+      // in external browser
+      store.dispatch(actions.openInExternalBrowser({ url: url }));
     }
-  );
+    return { action: "deny" };
+  });
 
   enum NavMode {
     Append,

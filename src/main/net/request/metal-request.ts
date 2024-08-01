@@ -11,11 +11,11 @@ import {
   RequestParsingFailure,
 } from "main/net/errors";
 
-import env from "common/env";
+import env from "main/env";
 
 import { net } from "electron";
 import { Readable } from "stream";
-import { userAgent } from "common/constants/useragent";
+import { userAgent } from "main/util/useragent";
 import { mainLogger } from "main/logger";
 import { fileSize } from "common/format/filesize";
 import { getResponseHeader } from "common/util/net";

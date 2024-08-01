@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { actions } from "common/actions";
-import { hookLogging, messages } from "common/butlerd";
+import * as messages from "common/butlerd/messages";
 import {
   DownloadReason,
   Game,
@@ -11,7 +11,8 @@ import {
 import { formatError, getInstallPlanInfoError } from "common/format/errors";
 import { fileSize } from "common/format/filesize";
 import { formatUploadTitle } from "common/format/upload";
-import { modals, ModalWidgetProps } from "common/modals";
+import { ModalWidgetProps } from "common/modals";
+import modals from "renderer/modals";
 import { PlanInstallParams, PlanInstallResponse } from "common/modals/types";
 import { Dispatch } from "common/types";
 import { ambientWind } from "common/util/navigation";
@@ -45,6 +46,7 @@ import styled from "renderer/styles";
 import { T, TString, _ } from "renderer/t";
 import { findWhere } from "underscore";
 import { recordingLogger } from "common/logger";
+import { hookLogging } from "common/helpers/bridge";
 
 const logger = rendererLogger.child(__filename);
 
@@ -179,7 +181,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
       error,
     } = this.state;
 
-    let canInstall = !error && !busy;
+    let canInstall = !error && !busy && uploads && uploads.length > 0;
     let locationOptions = installLocations.map((il) => {
       let val: InstallLocationOption = {
         label: `${il.path} (${fileSize(il.sizeInfo.freeSize)} free)`,
@@ -249,6 +251,8 @@ class PlanInstall extends React.PureComponent<Props, State> {
           ? this.renderBusy()
           : error
           ? this.renderError()
+          : uploads && uploads.length == 0
+          ? this.renderNoBuilds()
           : this.renderSizes()}
         <Filler />
         <ModalButtons>
@@ -312,6 +316,16 @@ class PlanInstall extends React.PureComponent<Props, State> {
         <FilterSpacer />
         <Floater />
       </LoadingStateDiv>
+    );
+  }
+
+  renderNoBuilds() {
+    return (
+      <ErrorContainer>
+        <ErrorParagraph>
+          <Icon icon="error" /> {T(_("plan_install.no_available_downloads"))}
+        </ErrorParagraph>
+      </ErrorContainer>
     );
   }
 
@@ -408,6 +422,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
       const logger = recordingLogger(rendererLogger);
       logger.info(`Queuing install for ${game.url}...`);
       try {
+        // investigate
         await rcall(
           messages.InstallQueue,
           {
@@ -419,9 +434,7 @@ class PlanInstall extends React.PureComponent<Props, State> {
             queueDownload: true,
             fastQueue: true,
           },
-          (convo) => {
-            hookLogging(convo, logger);
-          }
+          [hookLogging(logger)]
         );
         logger.info(`Queued!`);
         dispatch(actions.downloadQueued({}));
@@ -479,13 +492,10 @@ class PlanInstall extends React.PureComponent<Props, State> {
       try {
         const { gameId } = this.state;
         const logger = recordingLogger(rendererLogger);
-        const res = await rcall(
-          messages.InstallPlan,
-          { gameId, uploadId },
-          (convo) => {
-            hookLogging(convo, logger);
-          }
-        );
+        // investigate
+        const res = await rcall(messages.InstallPlan, { gameId, uploadId }, [
+          hookLogging(logger),
+        ]);
         this.setState({
           stage: PlanStage.Planning,
           game: res.game,

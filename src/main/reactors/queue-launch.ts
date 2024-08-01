@@ -10,12 +10,12 @@ import {
   isInternalError,
   asRequestError,
   mergeLogAndError,
-} from "common/butlerd";
+} from "common/butlerd/errors";
 import { Code } from "common/butlerd/messages";
 import { formatError } from "common/format/errors";
 import { t } from "common/format/t";
 import { showInExplorerString } from "common/format/show-in-explorer";
-import { modals } from "common/modals";
+import modals from "main/modals";
 
 export default function (watcher: Watcher) {
   watcher.on(actions.queueLaunch, async (store, action) => {

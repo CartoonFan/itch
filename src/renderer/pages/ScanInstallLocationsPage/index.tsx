@@ -1,9 +1,9 @@
 import { actions } from "common/actions";
-import { hookLogging, messages } from "common/butlerd";
+import * as messages from "common/butlerd/messages";
 import { Game } from "common/butlerd/messages";
 import { Dispatch } from "common/types";
 import { ambientWind } from "common/util/navigation";
-import { legacyMarketPath } from "common/util/paths";
+import { paths } from "renderer/bridge";
 import React from "react";
 import Button from "renderer/basics/Button";
 import Filler from "renderer/basics/Filler";
@@ -29,6 +29,7 @@ import { MeatProps } from "renderer/scenes/HubScene/Meats/types";
 import styled from "renderer/styles";
 import { T, _ } from "renderer/t";
 import { recordingLogger } from "common/logger";
+import { hookLogging, onNotification, onRequest } from "common/helpers/bridge";
 
 enum Stage {
   Scanning,
@@ -127,25 +128,26 @@ class ScanInstallLocations extends React.PureComponent<Props, State> {
       let didImport = false;
       const logger = recordingLogger(rendererLogger);
       try {
+        // investigate
         const { numImportedItems } = await rcall(
           messages.InstallLocationsScan,
-          { legacyMarketPath: legacyMarketPath() },
-          (convo) => {
-            hookLogging(convo, logger);
-            convo.onNotification(messages.Progress, async ({ progress }) => {
+          { legacyMarketPath: paths.legacyMarketPath() },
+          [
+            hookLogging(logger),
+            onNotification(messages.Progress.__method, async ({ progress }) => {
               this.setState({ progress });
-            });
-            convo.onNotification(
-              messages.InstallLocationsScanYield,
+            }),
+            onNotification(
+              messages.InstallLocationsScanYield.__method,
               async ({ game }) => {
                 this.setState((state) => ({
                   game,
                   games: [...state.games, game],
                 }));
               }
-            );
-            convo.onRequest(
-              messages.InstallLocationsScanConfirmImport,
+            ),
+            onRequest(
+              messages.InstallLocationsScanConfirmImport.__method,
               async ({ numItems }) => {
                 this.setState({ stage: Stage.NeedConfirm, numItems });
                 let confirmPromise = new Promise((resolve, reject) => {
@@ -162,8 +164,8 @@ class ScanInstallLocations extends React.PureComponent<Props, State> {
                 }
                 return { confirm: false };
               }
-            );
-          }
+            ),
+          ]
         );
         this.setState({ numItems: numImportedItems });
       } finally {

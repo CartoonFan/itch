@@ -1,4 +1,4 @@
-import memory from "memory-streams";
+import memory from "../../vendor/memory_streams";
 
 const levelNumbers = {
   silent: 100,
@@ -30,7 +30,7 @@ export interface LogSink {
 }
 
 export class Logger {
-  private name: string;
+  public name: string;
   public sink: LogSink;
 
   constructor(sink: LogSink, name?: string) {

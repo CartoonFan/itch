@@ -1,5 +1,5 @@
 import { actions } from "common/actions";
-import { messages, getCaveSummary } from "common/butlerd";
+import * as messages from "common/butlerd/messages";
 import { Game } from "common/butlerd/messages";
 import { formatTask, taskIcon } from "common/format/operation";
 import { Dispatch, ProgressInfo, TaskName } from "common/types";
@@ -18,6 +18,7 @@ import { T } from "renderer/t";
 import LastPlayed from "renderer/basics/LastPlayed";
 import butlerCaller from "renderer/hocs/butlerCaller";
 import StandardGameCover from "renderer/pages/common/StandardGameCover";
+import { getCaveSummary } from "common/butlerd/utils";
 
 const FetchCave = butlerCaller(messages.FetchCave);
 

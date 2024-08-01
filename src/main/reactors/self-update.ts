@@ -2,14 +2,14 @@ import childProcess from "child_process";
 import { actions } from "common/actions";
 import { t } from "common/format/t";
 import { Store } from "common/types";
-import { relaunchLogPath } from "common/util/paths";
+import { relaunchLogPath } from "main/util/paths";
 import { Watcher } from "common/util/watcher";
 import fs from "fs";
 import { ISM } from "main/broth/itch-setup";
 import { mainLogger } from "main/logger";
 import { manager } from "main/reactors/setup";
 import ospath, { dirname } from "path";
-import { modals } from "common/modals";
+import modals from "main/modals";
 import { delay } from "main/reactors/delay";
 
 const logger = mainLogger.child(__filename);

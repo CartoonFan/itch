@@ -1,6 +1,5 @@
-import { createRequest } from "butlerd";
 import { actions } from "common/actions";
-import { messages } from "common/butlerd";
+import * as messages from "common/butlerd/messages";
 import {
   SecretSettingsParams,
   SecretSettingsResponse,
@@ -13,7 +12,10 @@ import { doAsync } from "renderer/helpers/doAsync";
 import { hook } from "renderer/hocs/hook";
 import { ModalWidgetDiv } from "renderer/modal-widgets/styles";
 import styled from "renderer/styles";
-import { ModalWidgetProps, modals } from "common/modals";
+import { ModalWidgetProps } from "common/modals";
+import modals from "renderer/modals";
+import { electron, butlerd } from "renderer/bridge";
+import { onRequest } from "common/helpers/bridge";
 
 const ControlsDiv = styled.div`
   display: flex;
@@ -148,9 +150,8 @@ class SecretSettings extends React.PureComponent<Props> {
     );
   };
 
-  onGPUFeatureStatus = () => {
-    const app = require("electron").remote.app;
-    const data = app.getGPUFeatureStatus();
+  onGPUFeatureStatus = async () => {
+    const data = await electron.getGPUFeatureStatus();
     const { dispatch } = this.props;
     dispatch(
       actions.openModal(
@@ -166,7 +167,7 @@ class SecretSettings extends React.PureComponent<Props> {
   };
 
   onBadButlerdCall = () => {
-    const FakeRequest = createRequest<{}, {}>(
+    const FakeRequest = butlerd.createRequest<{}, {}>(
       "This.Is.Definitely.Not.A.Butlerd.Method"
     );
 
@@ -203,11 +204,12 @@ class SecretSettings extends React.PureComponent<Props> {
 
   onDoubleTwice = () => {
     doAsync(async () => {
-      await rcall(messages.TestDoubleTwice, { number: 7 }, (client) => {
-        client.onRequest(messages.TestDouble, async ({ number }) => {
+      // investigate
+      await rcall(messages.TestDoubleTwice, { number: 7 }, [
+        onRequest(messages.TestDouble.__method, async ({ number }) => {
           return { number: number * 2 };
-        });
-      });
+        }),
+      ]);
     });
   };
 

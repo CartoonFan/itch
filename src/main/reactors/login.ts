@@ -1,5 +1,6 @@
 import { actions } from "common/actions";
-import { messages, hookLogging } from "common/butlerd";
+import { hookLogging } from "common/butlerd/utils";
+import * as messages from "common/butlerd/messages";
 import { Profile } from "common/butlerd/messages";
 import urls from "common/constants/urls";
 import { Store } from "common/types";
@@ -7,7 +8,7 @@ import { partitionForUser } from "common/util/partition-for-user";
 import { Watcher } from "common/util/watcher";
 import { mcall } from "main/butlerd/mcall";
 import { mainLogger } from "main/logger";
-import { modals } from "common/modals";
+import modals from "main/modals";
 import urlParser from "url";
 import { promisedModal } from "main/reactors/modals";
 import { restoreTabs, saveTabs } from "main/reactors/tab-save";

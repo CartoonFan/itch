@@ -1,11 +1,9 @@
 import { RequestCreator } from "butlerd";
-import { call, SetupFunc } from "common/butlerd";
+import { SetupFunc } from "common/butlerd/net";
 import store from "renderer/store";
 import { rendererLogger } from "renderer/logger";
-
-if (process.type !== "renderer") {
-  throw new Error(`rcall cannot be required from main process`);
-}
+import { butlerd } from "renderer/bridge";
+import { Message } from "common/helpers/bridge";
 
 const logger = rendererLogger.childWithName("rcall");
 
@@ -15,7 +13,7 @@ const logger = rendererLogger.childWithName("rcall");
 export async function rcall<Params, Res>(
   rc: RequestCreator<Params, Res>,
   params: {} & Params,
-  setup?: SetupFunc
+  setups?: Message[]
 ): Promise<Res> {
-  return await call(store, logger, rc, params, setup);
+  return await butlerd.rcall(store, logger, rc.__method, params, setups);
 }

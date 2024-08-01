@@ -16,8 +16,8 @@ import { memoize } from "common/util/lru-memoize";
 import { currentRuntime } from "common/os/runtime";
 import { mainLogger } from "main/logger";
 import { mcall } from "main/butlerd/mcall";
-import { messages } from "common/butlerd";
-import { Menu } from "common/helpers/menu";
+import * as messages from "common/butlerd/messages";
+import { Menu } from "main/helpers/menu";
 
 const setTrayMenu = memoize(1, function (template: MenuTemplate, store: Store) {
   const fleshedOut = fleshOutTemplate(

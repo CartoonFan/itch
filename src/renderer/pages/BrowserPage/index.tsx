@@ -1,8 +1,7 @@
-import { userAgent } from "common/constants/useragent";
+import { useragent } from "renderer/bridge";
 import { Dispatch, ProxySource } from "common/types";
 import { ambientTab } from "common/util/navigation";
 import { partitionForUser } from "common/util/partition-for-user";
-import { WebviewTag } from "electron";
 import React from "react";
 import { hookWithProps } from "renderer/hocs/hook";
 import {
@@ -68,10 +67,12 @@ class BrowserPage extends React.PureComponent<Props> {
               <DisabledBrowser />
             ) : (
               <webview
+                // @ts-ignore (the provided React types want bool, but it really takes a boolean string)
+                allowpopups="true"
                 src="about:blank"
                 ref={this.gotWebview}
                 partition={partition}
-                useragent={userAgent()}
+                useragent={useragent.userAgent()}
                 enableremotemodule="false"
                 webpreferences="worldSafeExecuteJavaScript"
               />
@@ -89,8 +90,8 @@ class BrowserPage extends React.PureComponent<Props> {
     }
   }
 
-  wv: WebviewTag;
-  gotWebview = (wv: WebviewTag) => {
+  wv: Electron.WebviewTag;
+  gotWebview = (wv: Electron.WebviewTag) => {
     this.wv = wv;
     if (wv) {
       wv.addEventListener("dom-ready", this.wcDomReady);

@@ -1,10 +1,10 @@
 import { actions } from "common/actions";
 import { codGray } from "common/constants/colors";
 import { normalizeURL, opensInWindow } from "common/constants/windows";
-import env from "common/env";
+import env from "main/env";
 import { t } from "common/format/t";
 import { Space } from "common/helpers/space";
-import { modals } from "common/modals";
+import modals from "main/modals";
 import {
   NativeWindowState,
   PreferencesState,
@@ -12,9 +12,13 @@ import {
   Store,
   WindRole,
 } from "common/types";
-import config from "common/util/config";
+import config from "main/util/config";
 import { partitionForApp } from "common/util/partition-for-user";
-import { getImagePath, getRendererFilePath } from "common/util/resources";
+import {
+  getInjectPath,
+  getImagePath,
+  getRendererFilePath,
+} from "main/util/resources";
 import { Watcher } from "common/util/watcher";
 import {
   app,
@@ -533,21 +537,17 @@ function commonBrowserWindowOpts(
     titleBarStyle: "hidden",
     frame: false,
     webPreferences: {
-      // Will be deprecatd in a future version of electron,
-      // but itch v25's architecture relies on it.
-      enableRemoteModule: true,
       // In development, the front-end is served by webpack-dev-server
       // over HTTP, so we can't have websecurity
       webSecurity: env.development ? false : true,
-      // Will become the default in a future Electron version.
-      // Ensures values returned from `executeJavascript` are "world-safe".
-      worldSafeExecuteJavaScript: true,
-      // itch v25's architecture relies on it - some modules need `require()`.
-      nodeIntegration: true,
+      nodeIntegration: false,
+      sandbox: false,
+      contextIsolation: true,
       // needed for the web browser part of itch
       webviewTag: true,
       // custom session with `itch://` protocol support
       session: getAppSession(store),
+      preload: getInjectPath("preload"),
     },
   };
 }
@@ -724,17 +724,14 @@ function hookNativeWindow(
     }
   );
 
-  nativeWindow.webContents.on(
-    "new-window",
-    (ev, url, frameName, disposition, options, additionalFeatures) => {
-      ev.preventDefault();
-      logger.debug(
-        `new-window fired for ${url}, navigating instead (in wind ${wind})`
-      );
-      const background = disposition === "background-tab";
-      store.dispatch(actions.navigate({ url, wind, background }));
-    }
-  );
+  nativeWindow.webContents.setWindowOpenHandler(({ url, disposition }) => {
+    logger.debug(
+      `new-window fired for ${url}, navigating instead (in wind ${wind})`
+    );
+    const background = disposition === "background-tab";
+    store.dispatch(actions.navigate({ url, wind, background }));
+    return { action: "deny" };
+  });
 }
 
 export function getNativeState(rs: RootState, wind: string): NativeWindowState {

@@ -1,5 +1,5 @@
 import { User } from "common/butlerd/messages";
-import { getImageURL } from "common/util/resources";
+import { resources } from "renderer/bridge";
 
 export function getUserCoverURL(user: User): string {
   const { coverUrl, stillCoverUrl } = user;
@@ -7,11 +7,11 @@ export function getUserCoverURL(user: User): string {
 }
 
 const frogs = [
-  getImageURL("avatars/frog.svg"),
-  getImageURL("avatars/frog-cyan.svg"),
-  getImageURL("avatars/frog-red.svg"),
-  getImageURL("avatars/frog-gold.svg"),
-  getImageURL("avatars/frog-blue.svg"),
+  resources.getImageURL("avatars/frog.svg"),
+  resources.getImageURL("avatars/frog-cyan.svg"),
+  resources.getImageURL("avatars/frog-red.svg"),
+  resources.getImageURL("avatars/frog-gold.svg"),
+  resources.getImageURL("avatars/frog-blue.svg"),
 ];
 
 function getFrogCoverURL(userId: number): string {

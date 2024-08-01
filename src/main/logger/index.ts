@@ -1,9 +1,9 @@
 import { Logger, multiSink, streamSink, LogSink } from "common/logger";
-import { mainLogPath } from "common/util/paths";
+import { mainLogPath } from "main/util/paths";
 import stream from "logrotate-stream";
 import { consoleSink } from "main/logger/console-sink";
 import path from "path";
-import env from "common/env";
+import env from "main/env";
 import { mkdirSync } from "fs";
 
 export function getLogStream(): NodeJS.WritableStream {

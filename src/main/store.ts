@@ -6,10 +6,10 @@ import {
   createStore,
   applyMiddleware,
   compose,
+  AnyAction,
   Middleware,
   MiddlewareAPI,
 } from "redux";
-import { electronEnhancer } from "ftl-redux-electron-store";
 
 import route from "common/util/route";
 import getWatcher from "main/reactors";
@@ -17,8 +17,9 @@ import reducer from "common/reducers";
 
 import shouldLogAction from "common/util/should-log-action";
 
-import { Store } from "common/types";
+import { RootState, Store } from "common/types";
 import { mainLogger } from "main/logger";
+import { syncMain } from "@goosewobbler/electron-redux";
 
 const crashGetter = (store: MiddlewareAPI<any>) => (
   next: (action: any) => any
@@ -65,17 +66,15 @@ if (beChatty) {
 let watcher = getWatcher(mainLogger);
 
 const initialState = {} as any;
-const enhancers = [
-  electronEnhancer({
-    postDispatchCallback: (action: any) => {
-      route(watcher, store, action);
-    },
-  }),
-  applyMiddleware(...middleware),
-];
+const enhancers = [syncMain, applyMiddleware(...middleware)];
 
-const store = createStore(
-  reducer,
+const hack = { store: null };
+hack.store = createStore(
+  (state: RootState, action: AnyAction) => {
+    const res = reducer(state, action);
+    route(watcher, hack.store, action);
+    return res;
+  },
   initialState,
   compose(...enhancers)
 ) as Store;
@@ -88,4 +87,4 @@ if (module.hot) {
   });
 }
 
-export default store;
+export default hack.store;

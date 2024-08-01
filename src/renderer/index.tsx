@@ -2,7 +2,10 @@
 
 import { parse as parseQueryString } from "querystring";
 
-import env from "common/env";
+import env from "renderer/env";
+
+env.setNodeEnv();
+
 if (process.env.NODE_ENV === "production") {
   // cf. https://electronjs.org/docs/tutorial/security
   (window as any).eval = global.eval = function () {
@@ -31,7 +34,6 @@ if (env.development) {
   }
 }
 
-import electron from "electron";
 import App from "renderer/App";
 import { actions } from "common/actions";
 import { ExtendedWindow } from "common/types";
@@ -63,16 +65,6 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-// disable two-finger zoom on macOS
-
-if (process.platform === "darwin") {
-  try {
-    electron.webFrame.setVisualZoomLevelLimits(1, 1);
-  } catch (e) {
-    console.log(`couldn't disable two-finger zoom: ${e.stack || e}`);
-  }
-}
-
 async function start() {
   const opts = parseQueryString(location.search.replace(/^\?/, ""));
   const extWindow = (window as unknown) as ExtendedWindow;
@@ -82,7 +74,18 @@ async function start() {
   };
 
   render(App);
-  store.dispatch(actions.rootWindowReady({}));
+
+  // it isn't a guarantee that this code will run
+  // after the main process starts listening for
+  // this event. Keep sending it so that the main
+  // process is sure to receive it
+  const intervalId = setInterval(() => {
+    store.dispatch(actions.rootWindowReady({}));
+  }, 500);
+
+  store.watcher.on(actions.boot, () => {
+    clearInterval(intervalId);
+  });
 
   if (module.hot) {
     module.hot.accept("renderer/App", () => {

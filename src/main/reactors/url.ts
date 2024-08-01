@@ -1,17 +1,17 @@
 import { actions } from "common/actions";
 import urls from "common/constants/urls";
 import { Store } from "common/types";
-import { isItchioURL } from "common/util/url";
+import { isItchioURL } from "main/util/url";
 import { Watcher } from "common/util/watcher";
 import { shell } from "electron";
 import { mainLogger } from "main/logger";
-import { modals } from "common/modals";
+import modals from "main/modals";
 import urlParser from "url";
 import querystring from "querystring";
 import { doAsync } from "renderer/helpers/doAsync";
 import { queueInstall } from "main/reactors/tasks/queue-game";
 import { mcall } from "main/butlerd/mcall";
-import { messages } from "common/butlerd";
+import * as messages from "common/butlerd/messages";
 
 const logger = mainLogger.child(__filename);
 

@@ -1,10 +1,10 @@
 import { Instance } from "butlerd";
-import { butlerDbPath } from "common/util/paths";
+import { butlerDbPath } from "main/util/paths";
 import urls from "common/constants/urls";
 import ospath from "path";
-import { butlerUserAgent } from "common/constants/useragent";
+import { butlerUserAgent } from "main/util/useragent";
 import { RootState } from "common/types";
-import env from "common/env";
+import env from "main/env";
 import { MinimalContext } from "main/context";
 
 interface ButlerInstanceOpts {

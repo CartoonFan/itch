@@ -1,7 +1,7 @@
 import { Watcher } from "common/util/watcher";
 
-import { BrowserWindow } from "common/helpers/browser-window";
-import { Menu } from "common/helpers/menu";
+import { BrowserWindow } from "main/helpers/browser-window";
+import { Menu } from "main/helpers/menu";
 
 import { createSelector } from "reselect";
 
@@ -338,7 +338,7 @@ function computeMenuTemplate(
 
     edit: {
       localizedLabel: ["menu.edit.edit"],
-      visible: false,
+      visible: true,
       submenu: [
         {
           localizedLabel: ["menu.edit.cut"],

@@ -116,7 +116,7 @@ export function gameControls(store: Store, game: Game): MenuTemplate {
       statusItems.push({
         localizedLabel: [
           `grid.item.${mainAction}_title`,
-          { title: game.title },
+          { title: escapeForContextMenu(game.title) },
         ],
         action: actions.queueGame({ game }),
       });
@@ -127,7 +127,10 @@ export function gameControls(store: Store, game: Game): MenuTemplate {
     if (!busy) {
       updateAndLocalItems.push({
         localizedLabel: ["grid.item.check_for_update"],
-        action: actions.checkForGameUpdate({ caveId: cave.id }),
+        action: actions.checkForGameUpdate({
+          caveId: cave.id,
+          suppressNotification: false,
+        }),
       });
     }
 
@@ -175,7 +178,10 @@ export function gameControls(store: Store, game: Game): MenuTemplate {
       } else {
         // we have any kind of access
         statusItems.push({
-          localizedLabel: ["grid.item.install_title", { title: game.title }],
+          localizedLabel: [
+            "grid.item.install_title",
+            { title: escapeForContextMenu(game.title) },
+          ],
           action: actions.queueGame({ game }),
         });
       }
@@ -227,6 +233,15 @@ export function userMenu(store: Store): MenuTemplate {
       type: "separator",
     },
     {
+      icon: "download",
+      localizedLabel: ["preferences.advanced.check_game_updates"],
+      id: "user-menu-check-for-updates",
+      action: actions.checkForGameUpdates({}),
+    },
+    {
+      type: "separator",
+    },
+    {
       icon: "bug",
       localizedLabel: ["menu.help.report_issue"],
       action: actions.sendFeedback({}),
@@ -252,4 +267,10 @@ export function userMenu(store: Store): MenuTemplate {
       accelerator: "CmdOrCtrl+Q",
     },
   ];
+}
+
+function escapeForContextMenu(label: string) {
+  // In a context menu, '&[^&]' will be interpreted as a shortcut
+  // definition. Escaping requires a second ampersand
+  return label.replaceAll("&", "&&");
 }

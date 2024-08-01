@@ -1,5 +1,4 @@
 import { actions } from "common/actions";
-import { getCaveSummary } from "common/butlerd";
 import { Upload } from "common/butlerd/messages";
 import { fileSize } from "common/format/filesize";
 import { showInExplorerString } from "common/format/show-in-explorer";
@@ -30,6 +29,7 @@ import { T } from "renderer/t";
 import { ModalWidgetProps } from "common/modals";
 import { ModalButtons, ModalButtonSpacer } from "renderer/basics/modal-styles";
 import Filler from "renderer/basics/Filler";
+import { getCaveSummary } from "common/butlerd/utils";
 
 const CaveItem = styled.div`
   padding: 4px;
@@ -286,7 +286,10 @@ class ManageCave extends React.PureComponent<Props> {
     dispatch(
       actions.closeModal({
         wind: ambientWind(),
-        action: actions.checkForGameUpdate({ caveId }),
+        action: actions.checkForGameUpdate({
+          caveId,
+          suppressNotification: false,
+        }),
       })
     );
   };

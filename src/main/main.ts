@@ -1,17 +1,52 @@
 // This file is the entry point for the main (browser) process
 
-import env from "common/env";
+import env from "main/env";
 
-import { isItchioURL } from "common/util/url";
+import { legacyMarketPath, mainLogPath } from "main/util/paths";
+import { getImageURL, getInjectURL } from "main/util/resources";
+import { isItchioURL } from "main/util/url";
+import { userAgent } from "main/util/useragent";
 
 import { actions } from "common/actions";
-import { app, protocol, globalShortcut } from "electron";
+import { partitionForUser } from "common/util/partition-for-user";
+import {
+  app,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  protocol,
+  session,
+  App,
+  BrowserWindow,
+  IpcMainEvent,
+  OpenDialogOptions,
+} from "electron";
 
 import { loadPreferencesSync } from "main/reactors/preboot/load-preferences";
 import { Store } from "common/types";
+import { AsyncIpcHandlers, SyncIpcHandlers } from "common/ipc";
 import { mainLogger } from "main/logger";
 
 const appUserModelId = "com.squirrel.itch.itch";
+
+const registerSync = (
+  syncHandlers: SyncIpcHandlers,
+  asyncHandlers: AsyncIpcHandlers
+): void => {
+  Object.entries(syncHandlers).forEach(([eventName, callback]): void => {
+    ipcMain.on(eventName, (event: IpcMainEvent, arg: any): void => {
+      event.returnValue = callback(arg);
+    });
+  });
+  Object.entries(asyncHandlers).forEach(([eventName, callback]): void => {
+    ipcMain.handle(
+      eventName,
+      (event: IpcMainEvent, arg: any): ReturnType<typeof callback> => {
+        return callback(arg);
+      }
+    );
+  });
+};
 
 // App lifecycle
 
@@ -65,6 +100,50 @@ export function main() {
   let store: Store = require("main/store").default;
 
   let onReady = () => {
+    registerSync(
+      {
+        buildApp: (_x) => {
+          return {
+            name: app.getName(),
+            isPackaged: app.isPackaged,
+          };
+        },
+        userAgent: (_x) => {
+          return userAgent();
+        },
+        getImageURL,
+        getInjectURL,
+        legacyMarketPath,
+        mainLogPath,
+        onCaptchaResponse: (response) => {
+          if (response) {
+            store.dispatch(actions.closeCaptchaModal({ response }));
+          }
+          return null;
+        },
+      },
+      {
+        showOpenDialog: async (options: OpenDialogOptions) => {
+          const { filePaths } = await dialog.showOpenDialog(
+            BrowserWindow.getFocusedWindow(),
+            options
+          );
+          return filePaths;
+        },
+        getUserCacheSize: (userId: number) => {
+          const ourSession = session.fromPartition(
+            partitionForUser(String(userId)),
+            { cache: true }
+          );
+
+          return ourSession.getCacheSize();
+        },
+        getGPUFeatureStatus: async (_x) => {
+          return app.getGPUFeatureStatus;
+        },
+      }
+    );
+
     if (!env.integrationTests) {
       const singleInstanceLockAcquired = app.requestSingleInstanceLock();
       if (!singleInstanceLockAcquired) {
@@ -104,6 +183,20 @@ export function main() {
     app.on("before-quit", (e) => {
       e.preventDefault();
       store.dispatch(actions.quit({}));
+    });
+
+    app.on("web-contents-created", (_event, contents) => {
+      contents.on("will-navigate", (e, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl);
+
+        if (
+          !parsedUrl.origin.endsWith(".itch.io") &&
+          !parsedUrl.origin.endsWith("/itch.io")
+        ) {
+          e.preventDefault();
+          store.dispatch(actions.openInExternalBrowser({ url: navigationUrl }));
+        }
+      });
     });
 
     store.dispatch(actions.preboot({}));

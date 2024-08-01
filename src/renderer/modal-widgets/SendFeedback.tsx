@@ -17,6 +17,7 @@ import styled, { css } from "renderer/styles";
 import { IntlShape, injectIntl } from "react-intl";
 import { T } from "renderer/t";
 import { ModalButtons, ModalButtonSpacer } from "renderer/basics/modal-styles";
+import { sysinfo } from "renderer/bridge";
 
 enum ReportStage {
   Filling,
@@ -135,7 +136,6 @@ class ReportIssue extends React.PureComponent<Props, State> {
   componentDidMount() {
     doAsync(async () => {
       try {
-        const sysinfo = await import("systeminformation");
         let output = {
           cpu: "" as any,
           graphics: "" as any,
@@ -179,7 +179,6 @@ class ReportIssue extends React.PureComponent<Props, State> {
         } catch (e) {
           output.osInfo = `Could not get info: ${e}`;
         }
-
         output.broth = fillShape(this.props.brothPackages, {
           "*": {
             stage: true,
@@ -398,7 +397,7 @@ class ReportIssue extends React.PureComponent<Props, State> {
     });
 
     doAsync(async () => {
-      const daleURL = "https://dale.itch.ovh";
+      const daleURL = "https://dale.itch.zone";
       const { system, includeSystemInfo, message } = this.state;
       const { log } = this.props.modal.widgetParams;
       try {
@@ -482,7 +481,7 @@ ${log}
       );
     }
 
-    if (typeof input === "object") {
+    if (typeof input === "object" && input !== null) {
       return (
         <>
           {Object.keys(input).map((k) => (
@@ -511,7 +510,7 @@ ${log}
     const { dispatch } = this.props;
     dispatch(
       actions.openInExternalBrowser({
-        url: "https://dale.itch.ovh/",
+        url: "https://dale.itch.zone/",
       })
     );
   };

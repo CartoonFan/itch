@@ -1,5 +1,4 @@
 import { actions } from "common/actions";
-import { getCaveSummary } from "common/butlerd";
 import { Upload } from "common/butlerd/messages";
 import { fileSize } from "common/format/filesize";
 import { formatUploadTitle } from "common/format/upload";
@@ -20,6 +19,7 @@ import { T } from "renderer/t";
 import { each, filter, find, map, size } from "underscore";
 import { ModalWidgetProps } from "common/modals";
 import Floater from "renderer/basics/Floater";
+import { getCaveSummary } from "common/butlerd/utils";
 
 const CaveItemList = styled.div`
   margin: 8px 0;

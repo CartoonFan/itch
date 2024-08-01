@@ -1,8 +1,9 @@
 import { actions } from "common/actions";
-import { messages, hookLogging, hookProgress } from "common/butlerd";
+import { hookLogging, hookProgress } from "common/butlerd/utils";
+import * as messages from "common/butlerd/messages";
 import { Watcher } from "common/util/watcher";
 import { mainLogger } from "main/logger";
-import { modals } from "common/modals";
+import modals from "main/modals";
 import { performUninstall } from "main/reactors/downloads/perform-uninstall";
 import { promisedModal } from "main/reactors/modals";
 import asTask from "main/reactors/tasks/as-task";

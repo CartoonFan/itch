@@ -3,8 +3,7 @@ import querystring from "querystring";
 
 import { BrowserWindow, shell, session } from "electron";
 
-import { getInjectPath } from "common/util/resources";
-import * as url from "common/util/url";
+import { getInjectPath } from "main/util/resources";
 
 import { Context } from "main/context";
 
@@ -66,8 +65,7 @@ export async function performHTMLLaunch(
     webPreferences: {
       // don't let web code control the OS
       nodeIntegration: false,
-      // disable remote module
-      enableRemoteModule: false,
+      sandbox: false,
       // hooks up keyboard shortcuts, etc.
       preload: noPreload ? null : getInjectPath("game"),
       // stores cookies etc. in persistent session to save progress
@@ -128,14 +126,14 @@ export async function performHTMLLaunch(
     }
   );
 
-  win.webContents.on("new-window", (ev: Event, url: string) => {
-    ev.preventDefault();
+  win.webContents.setWindowOpenHandler(({ url }) => {
     let u = new URL(url);
     if (u.protocol == "http" || u.protocol == "https") {
       shell.openExternal(url);
     } else {
       logger.warn(`Prevented opening external URL: ${url}`);
     }
+    return { action: "deny" };
   });
 
   // nasty hack to pass in the itchObject

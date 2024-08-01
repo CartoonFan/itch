@@ -1,5 +1,5 @@
 import { join } from "path";
-import { getAppPath } from "common/helpers/app";
+import { getAppPath } from "main/helpers/app";
 
 let absoluteAppPath = join(getAppPath(), "src");
 let absoluteMainDistPath = join(getAppPath(), "dist", "main");
@@ -33,7 +33,7 @@ export function getLocalesConfigPath(): string {
   return getPath(resourcePath);
 }
 
-type InjectName = "itchio" | "game" | "captcha";
+type InjectName = "itchio" | "game" | "captcha" | "preload";
 
 export function getInjectPath(name: InjectName) {
   return join(absoluteMainDistPath, `inject-${name}.bundle.js`);

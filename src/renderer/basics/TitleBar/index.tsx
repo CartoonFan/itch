@@ -1,5 +1,5 @@
 import { actions } from "common/actions";
-import env from "common/env";
+import env from "renderer/env";
 import { Space } from "common/helpers/space";
 import { ExtendedWindow, TabInstance } from "common/types";
 import { Dispatch } from "common/types";
@@ -9,7 +9,7 @@ import IconButton from "renderer/basics/IconButton";
 import NewVersionAvailable from "renderer/basics/TitleBar/NewVersionAvailable";
 import UserMenu from "renderer/basics/TitleBar/UserMenu";
 import { hookWithProps } from "renderer/hocs/hook";
-import { modals } from "common/modals";
+import modals from "renderer/modals";
 import styled, * as styles from "renderer/styles";
 import { T } from "renderer/t";
 import { isSecretClick } from "common/helpers/secret-click";

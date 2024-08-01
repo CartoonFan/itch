@@ -20,6 +20,7 @@ import { MeatProps } from "renderer/scenes/HubScene/Meats/types";
 import styled, * as styles from "renderer/styles";
 import { T } from "renderer/t";
 import watching, { Watcher } from "renderer/hocs/watching";
+import { paths, electron, promisedFs } from "renderer/bridge";
 
 const AppLogDiv = styled.div`
   ${styles.meat};
@@ -58,14 +59,8 @@ class AppLogPage extends React.PureComponent<Props, State> {
   subscribe(watcher: Watcher) {
     watcher.on(actions.openLogFileRequest, async () => {
       try {
-        const electron = require("electron").remote;
-        const { dialog, BrowserWindow } = electron;
-        const { filePaths } = await dialog.showOpenDialog(
-          BrowserWindow.getFocusedWindow(),
-          {
-            title: "Open log file",
-          }
-        );
+        const { showOpenDialog } = electron;
+        const filePaths = await showOpenDialog({ title: "Open log file" });
         if (filePaths && filePaths.length > 0) {
           const filePath = filePaths[0];
           console.log(`Opening external log`, filePath);
@@ -160,14 +155,11 @@ class AppLogPage extends React.PureComponent<Props, State> {
   };
 
   doFetch = async () => {
-    const promisedFs = (await import("fs")).promises;
-
     let filePath = this.props.file;
     if (filePath) {
       console.log(`Reading external log`, filePath);
     } else {
-      const { mainLogPath } = await import("common/util/paths");
-      filePath = mainLogPath();
+      filePath = paths.mainLogPath();
     }
     const log = await promisedFs.readFile(filePath, { encoding: "utf8" });
     this.setState({ log, error: null });

@@ -2,8 +2,9 @@ import { Watcher } from "common/util/watcher";
 import { actions } from "common/actions";
 import { mainLogger } from "main/logger";
 import { mcall } from "main/butlerd/mcall";
-import { messages, hookLogging } from "common/butlerd";
-import { legacyMarketPath } from "common/util/paths";
+import { hookLogging } from "common/butlerd/utils";
+import * as messages from "common/butlerd/messages";
+import { legacyMarketPath } from "main/util/paths";
 
 const logger = mainLogger.child(__filename);
 
