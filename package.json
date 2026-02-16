@@ -80,7 +80,7 @@
     "@electron/packager": "^19.0.2",
     "@itchio/bob": "^2.1.0",
     "@types/classnames": "^2.2.11",
-    "@types/lru-cache": "^5.1.0",
+    "@types/lru-cache": "^5.1.1",
     "@types/mime-types": "^2.1.0",
     "@types/node": "^24.0.0",
     "@types/prop-types": "^15.7.3",
