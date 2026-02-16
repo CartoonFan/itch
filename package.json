@@ -83,7 +83,7 @@
     "@types/lru-cache": "^5.1.0",
     "@types/mime-types": "^2.1.0",
     "@types/node": "^24.0.0",
-    "@types/prop-types": "^15.7.3",
+    "@types/prop-types": "^15.7.15",
     "@types/react": "^17.0.80",
     "@types/react-dom": "^17.0.25",
     "@types/react-json-tree": "^0.6.11",
