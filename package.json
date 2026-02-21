@@ -59,7 +59,7 @@
     "redux-logger": "^3.0.6",
     "reselect": "^4.0.0",
     "semver": "^7.3.4",
-    "shell-quote": "^1.7.2",
+    "shell-quote": "^1.8.3",
     "split2": "^3.2.2",
     "styled-components": "^5.3.11",
     "systeminformation": "^5.21.7",
