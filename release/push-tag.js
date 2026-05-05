@@ -48,8 +48,6 @@ async function pushTag() {
     console.log("Letting npm bump package-lock.json...");
     $(`npm i`);
     $(`git add package.json package-lock.json`);
-    // note: `--no-verify` works around a lint-staged@10.2.13 path bug
-    // on msys2 on Windows.
     $(`git commit -m ':arrow_up: ${nextVersion}' --no-verify`);
   }
 
