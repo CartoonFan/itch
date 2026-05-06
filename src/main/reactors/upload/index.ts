@@ -27,7 +27,8 @@ const pendingPreviewCancels = new Set<string>();
 
 export default function (watcher: Watcher) {
   watcher.on(actions.startPush, async (store, action) => {
-    const { jobId, target, channel, src, gameId } = action.payload;
+    const { jobId, target, channel, src, gameId, userVersion, hidden } =
+      action.payload;
 
     const profile = store.getState().profile.profile;
     if (!profile) {
@@ -49,7 +50,15 @@ export default function (watcher: Watcher) {
     try {
       const res = await mcall(
         messages.PublishPush,
-        { profileId: profile.id, src, target, channel },
+        {
+          profileId: profile.id,
+          src,
+          target,
+          channel,
+          userVersion,
+          hidden,
+          source: "itch",
+        },
         (convo) => {
           hookLogging(convo, logger);
           activeConvos.set(jobId, convo);

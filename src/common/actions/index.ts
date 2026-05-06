@@ -927,6 +927,13 @@ export const actions = wireActions({
     channel: string;
     /** source path (folder or zip) */
     src: string;
+    /** Optional user-supplied version string forwarded to butler's
+     *  --userversion. Empty string from the form is normalised to undefined
+     *  before dispatch so butler keeps its auto-incrementing default. */
+    userVersion?: string;
+    /** Mark a newly-created channel as hidden on first push. Only set
+     *  when the typed channel name doesn't already exist for the target. */
+    hidden?: boolean;
     /** Display fields snapshotted from the picked Game so the synthetic
      *  in-flight row in the dashboard can render the project name/cover
      *  before the real Build comes back from the server. */

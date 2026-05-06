@@ -130,6 +130,11 @@ interface Props {
   profileId: number;
   selectedChannel: string | null;
   onChange: (channel: string | null) => void;
+  /** Notifies the parent of the set of channel names that already exist
+   *  for this target. The dialog uses this to decide whether the typed
+   *  channel is new (and thus eligible for the "hidden on creation"
+   *  toggle). null while the list is still loading or unavailable. */
+  onExistingChannels?: (names: ReadonlySet<string> | null) => void;
 }
 
 interface State {
@@ -151,6 +156,7 @@ export default class ChannelList extends React.PureComponent<Props, State> {
         <Header>{T(_("upload.pick_channel"))}</Header>
         <FetchChannels
           params={{ profileId, target }}
+          onResult={this.handleChannelsResult}
           render={({ result }) => {
             const channels: PublishChannel[] = result?.channels
               ? Object.values(result.channels).sort((a, b) =>
@@ -199,5 +205,17 @@ export default class ChannelList extends React.PureComponent<Props, State> {
     const v = ev.target.value;
     this.setState({ newChannel: v });
     this.props.onChange(v.trim() || null);
+  };
+
+  handleChannelsResult = (
+    result: messages.PublishListChannelsResult | undefined
+  ) => {
+    const { onExistingChannels } = this.props;
+    if (!onExistingChannels) return;
+    if (!result?.channels) {
+      onExistingChannels(null);
+      return;
+    }
+    onExistingChannels(new Set(Object.keys(result.channels)));
   };
 }

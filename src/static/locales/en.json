@@ -613,6 +613,8 @@
   "upload.pick_game": "Project:",
   "upload.pick_channel": "Channel",
   "upload.no_channels": "No channels yet — type a name below to create one.",
+  "upload.user_version": "Version (optional):",
+  "upload.hidden_on_creation": "Mark new channel as hidden",
   "upload.pick_source_hint": "Drop a folder or .zip here, or browse",
   "upload.browse": "Browse…",
   "upload.change_source": "Change…",

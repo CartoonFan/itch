@@ -43,6 +43,12 @@ interface OwnProps {
   target: string | null;
   channel: string | null;
   src: string | null;
+  /** Raw userVersion from the form. Empty string is normalised to undefined
+   *  before dispatch so butler keeps its auto-incrementing default. */
+  userVersion: string;
+  /** Already gated by the dialog to "channel doesn't yet exist" — passed
+   *  straight through to startPush. */
+  hidden: boolean;
   /** True after a first Push click without a successful preview backing
    *  the form. Lifted to the dialog so ReviewPanel can show a matching
    *  warning. */
@@ -124,6 +130,8 @@ class PushBar extends React.PureComponent<Props> {
       target,
       channel,
       src,
+      userVersion,
+      hidden,
       preview,
       pendingPushConfirm,
       onSetPendingPushConfirm,
@@ -132,14 +140,16 @@ class PushBar extends React.PureComponent<Props> {
     if (!gameId || !target || !channel || !src) return;
 
     // Two-click confirm: the first click lights up the warning state in
-    // the Review panel + relabels this button. Form-edits / Preview-click
-    // / preview-completion all reset pendingPushConfirm in the dialog, so
-    // the confirm decision can't go stale.
+    // the Review panel + relabels this button. Preview-affecting edits /
+    // Preview-click / preview-completion all reset pendingPushConfirm in the
+    // dialog, so the confirm decision can't go stale for source changes.
     const previewBackingPush = preview?.status === "done";
     if (!previewBackingPush && !pendingPushConfirm) {
       onSetPendingPushConfirm(true);
       return;
     }
+
+    const trimmedUserVersion = userVersion.trim();
 
     dispatch(
       actions.startPush({
@@ -152,6 +162,8 @@ class PushBar extends React.PureComponent<Props> {
         target,
         channel,
         src,
+        userVersion: trimmedUserVersion || undefined,
+        hidden: hidden || undefined,
       })
     );
     onPushStarted?.();

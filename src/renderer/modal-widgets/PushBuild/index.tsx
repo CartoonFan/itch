@@ -27,6 +27,43 @@ const PushBuildDialog = styled(ModalWidgetDiv)`
   width: clamp(760px, 88vw, 1200px);
 `;
 
+const OptionsRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  margin: 8px 0 0;
+  flex-wrap: wrap;
+`;
+
+const UserVersionLabel = styled.label`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: ${(props) => props.theme.secondaryText};
+  font-size: ${(props) => props.theme.fontSizes.baseText};
+`;
+
+const UserVersionInput = styled.input`
+  padding: 6px 8px;
+  background: ${(props) => props.theme.inputBackground};
+  color: ${(props) => props.theme.baseText};
+  border: 1px solid ${(props) => props.theme.inputBorder};
+  border-radius: 2px;
+  font-family: monospace;
+  width: 240px;
+`;
+
+const HiddenLabel = styled.label`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: ${(props) => props.theme.secondaryText};
+  cursor: pointer;
+`;
+
 interface OwnProps
   extends ModalWidgetProps<PushBuildParams, PushBuildResponse> {}
 
@@ -47,6 +84,16 @@ interface State {
   target: string | null;
   channel: string | null;
   src: string | null;
+  /** Optional --userversion string. Empty string is treated as unset. */
+  userVersion: string;
+  /** Mark a brand-new channel as hidden on creation. Only meaningful
+   *  (and only surfaced) when the typed channel name isn't already in
+   *  existingChannels. */
+  hidden: boolean;
+  /** Names of channels that already exist for the current target, as
+   *  reported by ChannelList once Publish.ListChannels resolves. null
+   *  while loading or before a target is picked. */
+  existingChannels: ReadonlySet<string> | null;
   /** True after the user clicked Push without a successful preview backing
    *  the current form. The next Push click pushes for real. Reset on form
    *  edits, on Preview click, and once a preview completes successfully. */
@@ -66,6 +113,9 @@ class PushBuild extends React.PureComponent<Props, State> {
       target,
       channel: prefilledChannel ?? null,
       src: null,
+      userVersion: "",
+      hidden: false,
+      existingChannels: null,
       pendingPushConfirm: false,
     };
   }
@@ -73,7 +123,23 @@ class PushBuild extends React.PureComponent<Props, State> {
   override render() {
     const { profile } = this.props;
     if (!profile) return null;
-    const { gameId, target, channel, src, pendingPushConfirm } = this.state;
+    const {
+      gameId,
+      target,
+      channel,
+      src,
+      userVersion,
+      hidden,
+      existingChannels,
+      pendingPushConfirm,
+    } = this.state;
+
+    // The hidden-on-creation toggle only makes sense for channels that
+    // don't yet exist. We hide the row entirely until ListChannels has
+    // resolved so we don't flash the option while the channel set is
+    // unknown — better to omit briefly than to show a misleading toggle.
+    const isNewChannel =
+      !!channel && existingChannels !== null && !existingChannels.has(channel);
 
     return (
       <PushBuildDialog>
@@ -91,11 +157,34 @@ class PushBuild extends React.PureComponent<Props, State> {
           profileId={profile.id}
           selectedChannel={channel}
           onChange={this.handleChannelChange}
+          onExistingChannels={this.handleExistingChannels}
         />
 
         <SourcePicker src={src} onChange={this.handleSrcChange} />
 
         <RecentFolders selectedPath={src} onPick={this.handleSrcChange} />
+
+        <OptionsRow>
+          <UserVersionLabel>
+            <span>{T(_("upload.user_version"))}</span>
+            <UserVersionInput
+              type="text"
+              placeholder="e.g. 1.2.3"
+              value={userVersion}
+              onChange={this.handleUserVersionChange}
+            />
+          </UserVersionLabel>
+          {isNewChannel ? (
+            <HiddenLabel title="When checked, the new channel will be created hidden. It won't be visible on your project page or in downloads until you unhide it from the itch.io dashboard. Subsequent pushes to the same channel keep it hidden until you change it.">
+              <input
+                type="checkbox"
+                checked={hidden}
+                onChange={this.handleHiddenChange}
+              />
+              <span>{T(_("upload.hidden_on_creation"))}</span>
+            </HiddenLabel>
+          ) : null}
+        </OptionsRow>
 
         <ReviewPanel pendingPushConfirm={pendingPushConfirm} />
 
@@ -107,6 +196,8 @@ class PushBuild extends React.PureComponent<Props, State> {
           target={target}
           channel={channel}
           src={src}
+          userVersion={userVersion}
+          hidden={isNewChannel ? hidden : false}
           pendingPushConfirm={pendingPushConfirm}
           onSetPendingPushConfirm={this.setPendingPushConfirm}
           onPushStarted={this.close}
@@ -140,9 +231,10 @@ class PushBuild extends React.PureComponent<Props, State> {
   };
 
   /** Cancel any in-flight preview, drop the slot, and reset the
-   *  push-confirm step. Called from each field-change handler so a stale
-   *  comparison or stale "I confirmed" state can never be acted on, and on
-   *  unmount so closing the modal mid-preview doesn't leak a worker. */
+   *  push-confirm step. Called from preview-affecting field-change handlers
+   *  so a stale comparison or stale "I confirmed" state can never be acted
+   *  on for source changes, and on unmount so closing the modal mid-preview
+   *  doesn't leak a worker. */
   discardPreview = () => {
     const { dispatch, preview } = this.props;
     if (preview && preview.status === "running") {
@@ -176,6 +268,10 @@ class PushBuild extends React.PureComponent<Props, State> {
         gameStillCoverUrl: null,
         target: null,
         channel: null,
+        // The set is per-target; drop it so the next target's load resets
+        // the new-channel detection cleanly.
+        existingChannels: null,
+        hidden: false,
       });
       return;
     }
@@ -187,17 +283,34 @@ class PushBuild extends React.PureComponent<Props, State> {
       gameStillCoverUrl: game.stillCoverUrl ?? null,
       target,
       channel: null,
+      existingChannels: null,
+      hidden: false,
     });
   };
 
   handleChannelChange = (channel: string | null) => {
     this.discardPreview();
-    this.setState({ channel });
+    // Reset the hidden toggle on every channel switch — its applicability
+    // depends on whether the new channel is brand-new, and conservatively
+    // turning it off avoids leaking a stale "hide" intent across edits.
+    this.setState({ channel, hidden: false });
   };
 
   handleSrcChange = (src: string | null) => {
     this.discardPreview();
     this.setState({ src });
+  };
+
+  handleUserVersionChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ userVersion: ev.target.value });
+  };
+
+  handleHiddenChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ hidden: ev.target.checked });
+  };
+
+  handleExistingChannels = (names: ReadonlySet<string> | null) => {
+    this.setState({ existingChannels: names });
   };
 }
 
