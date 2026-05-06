@@ -84,12 +84,21 @@ async function createRootWindow(store: Store) {
   const { width, height } = bounds;
   const center = bounds.x === -1 && bounds.y === -1;
 
+  // The --hidden flag is injected into the Exec= line of the autostart
+  // .desktop file (see open-at-login.ts), so it's only present on launches
+  // triggered by login autostart — not on manual launches via menu/desktop.
+  // We can't use the openAsHidden preference directly here because the user
+  // expects manual launches to still show a window.
+  const startHidden = process.argv.includes("--hidden");
+
   let opts: Electron.BrowserWindowConstructorOptions = {
     ...commonBrowserWindowOpts(store),
     title: app.getName(),
     width,
     height,
     center,
+    // Avoid Electron's default show:true painting a frame before we decide.
+    show: false,
   };
   const nativeWindow = new BrowserWindow(opts);
   store.dispatch(
@@ -128,6 +137,10 @@ async function createRootWindow(store: Store) {
 
   nativeWindow.loadURL(makeAppURL({ wind, role }));
 
+  if (!startHidden) {
+    nativeWindow.show();
+  }
+
   if (parseInt(process.env.DEVTOOLS || "0", 10) > 0) {
     openAppDevTools(nativeWindow);
   }
@@ -138,7 +151,10 @@ async function createRootWindow(store: Store) {
  * cf. https://github.com/itchio/itch/issues/1051
  */
 function ensureWindowInsideDisplay(nativeWindow: Electron.BrowserWindow) {
-  if (!nativeWindow || !nativeWindow.isVisible()) {
+  // getBounds()/setBounds() work on hidden windows, so we don't gate on
+  // isVisible() — that would no-op the check during root-window creation
+  // (we now construct with show:false) and skip the #1051 protection.
+  if (!nativeWindow) {
     return;
   }
 
@@ -265,7 +281,7 @@ export default function (watcher: Watcher) {
   });
 
   watcher.on(actions.preferencesLoaded, async (store, action) => {
-    const hidden = action.payload.openAsHidden;
+    const hidden = process.argv.includes("--hidden");
     if (!hidden) {
       store.dispatch(actions.focusWind({ wind: "root" }));
     }
