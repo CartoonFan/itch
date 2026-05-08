@@ -122,6 +122,7 @@ const logger = rendererLogger.child("UploadPage");
 function isPendingBuild(b: Build): boolean {
   return (
     b.state === messages.BuildState.Started ||
+    b.state === messages.BuildState.Queued ||
     b.state === messages.BuildState.Processing
   );
 }

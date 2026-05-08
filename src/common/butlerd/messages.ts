@@ -2731,8 +2731,11 @@ export interface Build {
 export enum BuildState {
   // BuildStateStarted is the state of a build from its creation until the initial upload is complete
   Started = "started",
-  // BuildStateProcessing is the state of a build from the initial upload's completion to its fully-processed state.
-  // This state does not mean the build is actually being processed right now, it's just queued for processing.
+  // BuildStateQueued is the state of a build after its initial upload is complete,
+  // before a worker has claimed it for processing.
+  Queued = "queued",
+  // BuildStateProcessing is the state of a build that has been claimed by a worker
+  // and is actively being processed.
   Processing = "processing",
   // BuildStateCompleted means the build was successfully processed. Its patch hasn't necessarily been
   // rediff'd yet, but we have the holy (patch,signature,archive) trinity.

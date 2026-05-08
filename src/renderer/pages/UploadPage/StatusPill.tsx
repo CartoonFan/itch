@@ -138,6 +138,7 @@ export default class StatusPill extends React.PureComponent<Props> {
             {T(_("upload.status.failed"))}
           </Pill>
         );
+      case BuildState.Queued:
       case BuildState.Processing:
       case BuildState.Started:
       default:
