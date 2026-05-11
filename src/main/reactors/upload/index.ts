@@ -1,4 +1,5 @@
 import { Conversation } from "@itchio/butlerd";
+import { app } from "electron";
 import { actions } from "common/actions";
 import * as messages from "common/butlerd/messages";
 import { hookLogging } from "common/butlerd/utils";
@@ -57,7 +58,7 @@ export default function (watcher: Watcher) {
           channel,
           userVersion,
           hidden,
-          source: "itch",
+          source: `itch/${app.getVersion()}`,
         },
         (convo) => {
           hookLogging(convo, logger);
