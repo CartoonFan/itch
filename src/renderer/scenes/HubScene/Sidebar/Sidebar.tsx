@@ -194,14 +194,12 @@ class Sidebar extends React.PureComponent<Props, State> {
           {this.renderLink("itch://dashboard", "archive", [
             "sidebar.dashboard",
           ])}
-          {this.props.isKitch
-            ? this.renderLink(
-                "itch://upload",
-                "upload",
-                ["sidebar.upload"],
-                this.props.uploadActive ? <Floater tiny /> : null
-              )
-            : null}
+          {this.renderLink(
+            "itch://upload",
+            "upload",
+            ["sidebar.upload"],
+            this.props.uploadActive ? <Floater tiny /> : null
+          )}
         </SidebarItems>
       </>
     );
@@ -264,7 +262,6 @@ interface Props {
   enableTabs: boolean;
   url: string;
   uploadActive: boolean;
-  isKitch: boolean;
 
   dispatch: Dispatch;
 }
@@ -285,5 +282,4 @@ export default hook((map) => ({
     return ti.history[ti.currentIndex].url;
   }),
   uploadActive: map((rs) => selectHasInFlightPush(rs.upload)),
-  isKitch: map((rs) => rs.system.appName === "kitch"),
 }))(Sidebar);

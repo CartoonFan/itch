@@ -229,7 +229,7 @@ class Meat extends React.PureComponent<Props, State> {
       case "dashboard":
         return DashboardPage;
       case "upload":
-        return this.props.isKitch ? UploadPage : null;
+        return UploadPage;
       case "downloads":
         return DownloadsPage;
       case "preferences":
@@ -264,7 +264,6 @@ interface Props extends MeatProps {
   isBrowser: boolean;
   internalPage: string;
   firstPathElement: string;
-  isKitch: boolean;
 }
 
 export default withTab(
@@ -277,6 +276,5 @@ export default withTab(
     firstPathElement: map(
       (rs, props) => ambientTab(rs, props).location.firstPathElement
     ),
-    isKitch: map((rs) => rs.system.appName === "kitch"),
   }))(Meat)
 );
