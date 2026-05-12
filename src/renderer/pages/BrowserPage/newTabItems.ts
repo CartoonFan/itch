@@ -21,6 +21,11 @@ export const newTabPrimaryItems = [
     icon: "archive",
     url: "itch://dashboard",
   },
+  {
+    label: ["sidebar.upload"],
+    icon: "upload",
+    url: "itch://upload",
+  },
 ];
 
 export const newTabSecondaryItems = [
