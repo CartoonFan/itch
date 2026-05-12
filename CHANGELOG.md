@@ -1,6 +1,6 @@
 # Changelog
 
-## [26.10.0] - 2026-05-12
+## [26.11.0] - 2026-05-12
 
 This release adds a UI for uploading builds to itch.io with butler without needing to drop down to the terminal, upgrades to Electron 41 and TypeScript 6, and includes a handful of accessibility, hotkey, and Linux autostart fixes.
 
