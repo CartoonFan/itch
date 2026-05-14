@@ -169,6 +169,15 @@ const SizeSecondary = styled.div`
   color: ${(props) => props.theme.secondaryText};
   opacity: 0.75;
   line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const BoltIcon = styled.svg`
+  width: 0.9em;
+  height: 0.9em;
+  flex-shrink: 0;
 `;
 
 const Kebab = styled.button`
@@ -433,8 +442,14 @@ function orderedBuildFiles(files: BuildFile[] | undefined): BuildFile[] {
   if (!files || files.length === 0) return [];
   const out: BuildFile[] = [];
   for (const t of BUILD_FILE_TYPE_ORDER) {
-    const f = findBuildFile(files, t);
-    if (f) out.push(f);
+    const matches = files.filter((f) => f.type === t);
+    // Default subType before Optimized so the original patch lists first.
+    matches.sort((a, b) => {
+      const ao = a.subType === BuildFileSubType.Optimized ? 1 : 0;
+      const bo = b.subType === BuildFileSubType.Optimized ? 1 : 0;
+      return ao - bo;
+    });
+    for (const f of matches) out.push(f);
   }
   for (const f of files) {
     if (!BUILD_FILE_TYPE_ORDER.includes(f.type)) out.push(f);
@@ -550,9 +565,17 @@ class BuildRow extends React.PureComponent<Props, State> {
     const userVersion = build?.userVersion?.trim() || null;
     const buildIdLabel = build ? `#${build.id}` : "";
     const archiveFile = findBuildFile(build?.files, BuildFileType.Archive);
-    const patchFile = findBuildFile(build?.files, BuildFileType.Patch);
+    // Prefer the optimized patch when present — it's the smaller download
+    // players will actually receive once async optimization finishes.
+    const patchFile =
+      build?.files?.find(
+        (f) =>
+          f.type === BuildFileType.Patch &&
+          f.subType === BuildFileSubType.Optimized
+      ) ?? findBuildFile(build?.files, BuildFileType.Patch);
     const archiveSize = archiveFile?.size ?? upload?.size ?? 0;
     const patchSize = patchFile?.size ?? 0;
+    const patchIsOptimized = patchFile?.subType === BuildFileSubType.Optimized;
     const orderedFiles = orderedBuildFiles(build?.files);
     const platforms = upload?.platforms;
 
@@ -622,6 +645,20 @@ class BuildRow extends React.PureComponent<Props, State> {
                   "upload.size.patch_subtext",
                   { size: fileSize(patchSize) },
                 ])}
+                {patchIsOptimized ? (
+                  <BoltIcon
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    role="img"
+                    aria-label="optimized"
+                    data-rh={JSON.stringify(
+                      _("upload.size.patch_optimized_hint")
+                    )}
+                    data-rh-at="top"
+                  >
+                    <path d="M13 2 L4 14 L11 14 L10 22 L20 10 L13 10 Z" />
+                  </BoltIcon>
+                ) : null}
               </SizeSecondary>
             ) : null}
           </SizeCell>
@@ -826,14 +863,15 @@ class BuildRow extends React.PureComponent<Props, State> {
     const className = failed ? "failed" : pending ? "muted" : "";
     const meta: string[] = [];
     if (file.size > 0) meta.push(fileSize(file.size));
-    if (file.subType === BuildFileSubType.Optimized) {
-      meta.push("optimized");
-    }
     if (file.state !== BuildFileState.Uploaded) {
       meta.push(file.state);
     }
-    const typeKey = `upload.file_type.${file.type}`;
-    const hintKey = `upload.file_type.${file.type}_hint`;
+    const isOptimizedPatch =
+      file.type === BuildFileType.Patch &&
+      file.subType === BuildFileSubType.Optimized;
+    const typeSuffix = isOptimizedPatch ? "patch_optimized" : file.type;
+    const typeKey = `upload.file_type.${typeSuffix}`;
+    const hintKey = `upload.file_type.${typeSuffix}_hint`;
     return (
       <FileChip
         key={`${file.type}-${file.subType}`}
