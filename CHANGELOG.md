@@ -1,5 +1,19 @@
 # Changelog
 
+## [26.12.0] - 2026-05-14
+
+A small follow-up to 26.11.0 that opens the Upload page to all users and surfaces information about optimized patches.
+
+### Upload
+
+- The Upload entry in the sidebar and the Upload tile on the new-tab page are now shown to everyone, not just kitch users
+- When butler has finished producing an optimized patch for a build, the Upload page now reports the optimized patch size (instead of the original) with a bolt icon and a tooltip explaining what it is
+- The per-build file list shows the original and optimized patches as separate entries, with the original listed first
+
+### Security
+
+- `npm audit fix` for transitive dependency advisories
+
 ## [26.11.0] - 2026-05-12
 
 This release adds a UI for uploading builds to itch.io with butler without needing to drop down to the terminal, upgrades to Electron 41 and TypeScript 6, and includes a handful of accessibility, hotkey, and Linux autostart fixes.
