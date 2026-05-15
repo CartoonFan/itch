@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "renderer/basics/Button";
 import Icon from "renderer/basics/Icon";
+import Link from "renderer/basics/Link";
 import { electron } from "renderer/bridge";
 import styled from "renderer/styles";
 import { T, _ } from "renderer/t";
@@ -33,6 +34,13 @@ const Hint = styled.div`
   margin-bottom: 12px;
 `;
 
+const Actions = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+`;
+
 interface Props {
   src: string | null;
   onChange: (src: string | null) => void;
@@ -57,18 +65,33 @@ export default class SourcePicker extends React.PureComponent<Props, State> {
         <Hint>
           <Icon icon="upload" /> {T(_("upload.pick_source_hint"))}
         </Hint>
-        <Button icon="folder-open" onClick={this.handleBrowse}>
-          {T(_(src ? "upload.change_source" : "upload.browse"))}
-        </Button>
+        <Actions>
+          <Button primary icon="folder-open" onClick={this.handleBrowseFolder}>
+            {T(_("upload.select_folder"))}
+          </Button>
+          <Link onClick={this.handleBrowseZip}>
+            {T(_("upload.select_zip"))}
+          </Link>
+        </Actions>
         {src ? <PathLine>{src}</PathLine> : null}
       </Wrapper>
     );
   }
 
-  handleBrowse = async () => {
+  handleBrowseFolder = async () => {
     const filePaths = await electron.showOpenDialog({
-      title: "Pick a folder or .zip to push",
-      properties: ["openFile", "openDirectory"],
+      title: "Pick a folder to push",
+      properties: ["openDirectory"],
+    });
+    if (filePaths && filePaths.length > 0) {
+      this.props.onChange(filePaths[0]);
+    }
+  };
+
+  handleBrowseZip = async () => {
+    const filePaths = await electron.showOpenDialog({
+      title: "Pick a .zip to push",
+      properties: ["openFile"],
       filters: [{ name: "Archives", extensions: ["zip"] }],
     });
     if (filePaths && filePaths.length > 0) {
