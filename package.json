@@ -79,7 +79,7 @@
     "@types/classnames": "^2.2.11",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^24.0.0",
-    "@types/prop-types": "^15.7.3",
+    "@types/prop-types": "^15.7.15",
     "@types/react": "^17.0.80",
     "@types/react-dom": "^17.0.25",
     "@types/react-json-tree": "^0.6.11",
