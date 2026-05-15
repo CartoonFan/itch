@@ -3,6 +3,7 @@ import {
   ipcRenderer,
   BrowserWindow,
   OpenDialogOptions,
+  webUtils,
 } from "electron";
 import { call } from "common/butlerd/net";
 import { createRequest } from "@itchio/butlerd";
@@ -49,6 +50,9 @@ export const mainWorldSupplement = {
     }),
     showOpenDialog: (options: OpenDialogOptions) => {
       return emitAsyncIpcEvent("showOpenDialog", options);
+    },
+    getPathForFile: (file: File) => {
+      return webUtils.getPathForFile(file);
     },
     getUserCacheSize: (userId: number) => {
       return emitAsyncIpcEvent("getUserCacheSize", userId);

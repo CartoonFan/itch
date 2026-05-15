@@ -89,8 +89,10 @@ export default class SourcePicker extends React.PureComponent<Props, State> {
     ev.preventDefault();
     this.setState({ hover: false });
     const file = ev.dataTransfer.files?.[0];
-    if (file && (file as any).path) {
-      this.props.onChange((file as any).path as string);
+    if (!file) return;
+    const path = electron.getPathForFile(file);
+    if (path) {
+      this.props.onChange(path);
     }
   };
 }
