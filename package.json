@@ -30,7 +30,7 @@
     "btoa": "^1.2.1",
     "buffer": "^6.0.3",
     "classnames": "^2.2.6",
-    "crc-32": "^1.2.0",
+    "crc-32": "^1.2.2",
     "events": "^3.3.0",
     "fast-memoize": "^2.5.2",
     "intl-messageformat": "^9.4.6",
