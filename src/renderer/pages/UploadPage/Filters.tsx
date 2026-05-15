@@ -10,6 +10,7 @@ import { T, _ } from "renderer/t";
 const Bar = styled.div`
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 `;

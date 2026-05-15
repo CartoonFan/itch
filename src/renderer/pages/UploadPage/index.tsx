@@ -53,6 +53,7 @@ const Subtitle = styled.div`
 const Toolbar = styled.div`
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 14px;

@@ -12,7 +12,9 @@ import { IntlShape, injectIntl } from "react-intl";
 
 const Wrap = styled.div`
   position: relative;
-  flex: 0 0 360px;
+  flex: 1 1 280px;
+  min-width: 180px;
+  max-width: 360px;
 `;
 
 const StyledIcon = styled(Icon)`
