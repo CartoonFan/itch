@@ -55,7 +55,7 @@
     "styled-components": "^5.3.11",
     "systeminformation": "^5.31.13",
     "term-color": "^1.0.1",
-    "vivus": "^0.4.5",
+    "vivus": "^0.4.6",
     "which": "^6.0.1",
     "yauzl": "^3.4.0"
   },
