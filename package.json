@@ -30,7 +30,7 @@
     "classnames": "^2.2.6",
     "fast-memoize": "^2.5.2",
     "intl-messageformat": "^9.4.6",
-    "logrotate-stream": "^0.2.7",
+    "logrotate-stream": "^0.2.9",
     "lru-cache": "^11.3.6",
     "mime-types": "^3.0.2",
     "polished": "^3.6.7",
